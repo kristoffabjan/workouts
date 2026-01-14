@@ -1,0 +1,44 @@
+Workouts app
+create action plan, generated in chat gpt
+create local setup to run php app(docker compose)
+generate instruction for claude with list of required services
+create laravel project
+insert, complete context files for claude
+create db structure
+continue with app features
+General info
+Local setup
+Create .docker/ dir in root of project for docker images and container config. Create docker-compose.yml in root. Make sure volumes are properly done. On root level there will be laravel app as well, so for example laravels app/ dir will be on same root level as .docker/ and docker-compose.yml
+Nginx
+PHP container with composer with php 8.5
+Mysql
+Redis
+Phpmyadmin
+Mailpit
+Concept
+Web app(PHP dashboard) to admins, coaches and people to create trainings/workouts, schedule workouts in future, make plans, show future training in calendar. Coaches have ability to create trainings for clients. Clients can see trainings and report their feelings after training. Coaches can see all trainings in calendar for clients. Each training has exercises, with potential link to videos etc. Maybe we can have tabel for exercise, so that each exercise can have preassigned videos attached to it as well, so coach can create new training and than attach certain exercises and just add some notes. 
+I guess there should be some kind of planning mode, to lets say replicate today week of trainings to next period or sth. 
+Also make sure, that app is done in modular way, so it can be improved and completed later. Later, i would like to implement features, where you can generate trainings with ai. Also, we have to think about some kind of flow, that allows coaches for simple creation of multiple training or like duplication for next time period. So then coach can only augment some details.
+In 1st phase mainly focus on solid base, from which we can than build additional features. 
+My use case would be to set myself weightlifting trainings for next few weeks. So maybe i insert new training, on which i for 1st version only write rich text as training content.
+and than i can duplicate this training to selected days(like monday for next half year) or similar. Maybe propose some simple functionality like so, so it can optimize training schedule creation. Than i would have those trainings on my in-app calendar and see exact plan on this training item. 
+As mentioned, user can be in multiple teams, so in navigation as user, you can pick, which team you are currently loggen in, like filament panel. Coach can invite new members by specifying new member with its email. Email can exist in another team, but its same user, being in multiple teams. Than we have classic relationships of roles and laravel policies to see various things in app.
+
+
+
+Tech stack
+Laravel 12
+Filament 4
+Livewire
+Php 8.5, 
+composer packages
+you can use various packages, for example some calendar for ui etc
+
+App structure
+Only as filament dashboard app, made with filament
+
+Implementation flow
+Claude Code in vscode
+
+Engineering team
+Senior PHP developer
