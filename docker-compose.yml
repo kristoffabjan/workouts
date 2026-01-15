@@ -1,0 +1,95 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: workouts_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+      - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - workouts_network
+
+  php:
+    build:
+      context: ./.docker/php
+      dockerfile: Dockerfile
+    container_name: workouts_php
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    networks:
+      - workouts_network
+
+  mysql:
+    image: mysql:8.4
+    container_name: workouts_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: workouts
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: workouts
+      MYSQL_PASSWORD: workouts
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - workouts_network
+
+  redis:
+    image: redis:alpine
+    container_name: workouts_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - workouts_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: workouts_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - mysql
+    networks:
+      - workouts_network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: workouts_mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - workouts_network
+
+  node:
+    image: node:lts-alpine3.23
+    container_name: workouts_node
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - workouts_network
+
+
+networks:
+  workouts_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:

@@ -14,19 +14,21 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 
 ### Tasks
 
-- [ ] Create `.docker/` directory structure
+- [ x] Create `.docker/` directory structure
   - `nginx/default.conf` - Laravel-optimized configuration
   - `php/Dockerfile` - PHP 8.4-FPM with extensions (pdo_mysql, redis, gd, zip, opcache)
-- [ ] Create `docker-compose.yml` with services:
+- [ x] Create `docker-compose.yml` with services:
   - nginx (port 80)
   - php (8.4-fpm with Composer)
   - mysql (8.4)
   - redis
   - phpmyadmin (port 8080)
   - mailpit (ports 1025, 8025)
-- [ ] Configure volumes for persistence (mysql_data, redis_data)
-- [ ] Configure shared network (workouts_network)
-- [ ] Test: `docker-compose up -d` brings up all services
+  - node(port 3000) - for frontend asset building
+- [ x] Keep in mind larvel app will reside on root level (not in subfolder), so laravels app/ will be on same level as docker-compose.yml and .docker/ - use this info according when defining volumes and working directories
+- [ x] Configure shared network (workouts_network)
+- [ x] Configure volumes for persistence (mysql_data, redis_data)
+- [ x] Test: `docker-compose up -d` brings up all services
 
 **Deliverable**: Working Docker environment accessible at http://localhost
 
