@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    libicu-dev \
     zip \
     unzip \
     gnupg \
@@ -20,7 +21,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip opcache
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip opcache intl
 
 # Install Redis extension via PECL
 RUN pecl install redis && docker-php-ext-enable redis
@@ -46,6 +47,9 @@ WORKDIR /var/www/html
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html
+
+RUN mkdir -p /var/www/.composer/cache && \
+    chown -R www-data:www-data /var/www/.composer
 
 USER www-data
 
