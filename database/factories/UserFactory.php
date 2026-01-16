@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TeamRole;
+use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -11,16 +13,8 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
@@ -35,9 +29,6 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -45,15 +36,41 @@ class UserFactory extends Factory
         ]);
     }
 
-    /**
-     * Indicate that the model has two-factor authentication configured.
-     */
     public function withTwoFactor(): static
     {
         return $this->state(fn (array $attributes) => [
             'two_factor_secret' => encrypt('secret'),
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
             'two_factor_confirmed_at' => now(),
+        ]);
+    }
+
+    public function forTeam(Team $team, TeamRole $role = TeamRole::Client): static
+    {
+        return $this->afterCreating(function ($user) use ($team, $role) {
+            $user->teams()->attach($team, ['role' => $role]);
+        });
+    }
+
+    public function admin(Team $team): static
+    {
+        return $this->forTeam($team, TeamRole::Admin);
+    }
+
+    public function coach(Team $team): static
+    {
+        return $this->forTeam($team, TeamRole::Coach);
+    }
+
+    public function client(Team $team): static
+    {
+        return $this->forTeam($team, TeamRole::Client);
+    }
+
+    public function globalAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
         ]);
     }
 }

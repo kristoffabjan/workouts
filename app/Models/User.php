@@ -2,34 +2,29 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\TeamRole;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -37,22 +32,72 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class)
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    public function createdExercises(): HasMany
+    {
+        return $this->hasMany(Exercise::class, 'created_by');
+    }
+
+    public function createdTrainings(): HasMany
+    {
+        return $this->hasMany(Training::class, 'created_by');
+    }
+
+    public function assignedTrainings(): BelongsToMany
+    {
+        return $this->belongsToMany(Training::class)
+            ->withPivot('completed_at', 'feedback')
+            ->withTimestamps();
+    }
+
+    public function getRoleInTeam(Team|int $team): ?TeamRole
+    {
+        $teamId = $team instanceof Team ? $team->id : $team;
+        $pivot = $this->teams()->where('team_id', $teamId)->first()?->pivot;
+
+        return $pivot ? TeamRole::from($pivot->role) : null;
+    }
+
+    public function hasRole(Team|int $team, TeamRole $role): bool
+    {
+        return $this->getRoleInTeam($team) === $role;
+    }
+
+    public function isAdmin(Team|int $team): bool
+    {
+        return $this->hasRole($team, TeamRole::Admin);
+    }
+
+    public function isCoach(Team|int $team): bool
+    {
+        return $this->hasRole($team, TeamRole::Coach);
+    }
+
+    public function isClient(Team|int $team): bool
+    {
+        return $this->hasRole($team, TeamRole::Client);
+    }
+
     public function initials(): string
     {
         return Str::of($this->name)
