@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TrainingStatus;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Training extends Model
 {
     /** @use HasFactory<\Database\Factories\TrainingFactory> */
-    use HasFactory, SoftDeletes;
+    use BelongsToTenant, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'team_id',
@@ -30,11 +31,6 @@ class Training extends Model
             'status' => TrainingStatus::class,
             'scheduled_date' => 'date',
         ];
-    }
-
-    public function team(): BelongsTo
-    {
-        return $this->belongsTo(Team::class);
     }
 
     public function creator(): BelongsTo
