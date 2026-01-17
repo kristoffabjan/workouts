@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources\Exercises\Schemas;
+namespace App\Filament\Admin\Resources\Exercises\Schemas;
 
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -16,7 +16,8 @@ class ExerciseForm
             ->components([
                 TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true, modifyRuleUsing: fn ($rule) => $rule->whereNull('team_id')),
                 RichEditor::make('description')
                     ->columnSpanFull(),
                 Repeater::make('video_urls')

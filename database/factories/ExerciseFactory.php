@@ -56,6 +56,13 @@ class ExerciseFactory extends Factory
         ]);
     }
 
+    public function global(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'team_id' => null,
+        ]);
+    }
+
     public function createdBy(User $user): static
     {
         return $this->state(fn (array $attributes) => [

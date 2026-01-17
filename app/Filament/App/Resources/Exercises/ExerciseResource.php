@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ExerciseResource extends Resource
@@ -24,6 +25,8 @@ class ExerciseResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     public static function form(Schema $schema): Schema
     {
         return ExerciseForm::configure($schema);
@@ -32,6 +35,20 @@ class ExerciseResource extends Resource
     public static function table(Table $table): Table
     {
         return ExercisesTable::configure($table);
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'tags'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        $tags = $record->tags ?? [];
+
+        return [
+            'Tags' => implode(', ', array_slice($tags, 0, 5)),
+        ];
     }
 
     public static function getRelations(): array

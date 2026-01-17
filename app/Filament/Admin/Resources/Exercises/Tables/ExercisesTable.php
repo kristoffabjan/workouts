@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Resources\Exercises\Tables;
+namespace App\Filament\Admin\Resources\Exercises\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -25,8 +25,13 @@ class ExercisesTable
                     ->searchable(),
                 TextColumn::make('creator.name')
                     ->label('Created By')
-                    ->sortable(),
+                    ->sortable()
+                    ->default('System'),
                 TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -38,11 +43,6 @@ class ExercisesTable
                     ->preload()
                     ->multiple()
                     ->query(fn ($query, array $data) => self::filterByTags($query, $data['values'] ?? [])),
-                SelectFilter::make('created_by')
-                    ->relationship('creator', 'name')
-                    ->label('Created By')
-                    ->searchable()
-                    ->preload(),
             ])
             ->recordActions([
                 EditAction::make(),

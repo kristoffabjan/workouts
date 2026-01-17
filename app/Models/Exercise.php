@@ -54,6 +54,11 @@ class Exercise extends Model
         return $query->whereNull('team_id');
     }
 
+    public function scopeGlobal(Builder $query): Builder
+    {
+        return $query->whereNull('team_id');
+    }
+
     public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('created_by', $userId);
