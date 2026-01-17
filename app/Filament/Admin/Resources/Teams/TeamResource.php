@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Teams;
 use App\Filament\Admin\Resources\Teams\Pages\CreateTeam;
 use App\Filament\Admin\Resources\Teams\Pages\EditTeam;
 use App\Filament\Admin\Resources\Teams\Pages\ListTeams;
+use App\Filament\Admin\Resources\Teams\RelationManagers\UsersRelationManager;
 use App\Filament\Admin\Resources\Teams\Schemas\TeamForm;
 use App\Filament\Admin\Resources\Teams\Tables\TeamsTable;
 use App\Models\Team;
@@ -38,7 +39,7 @@ class TeamResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            UsersRelationManager::class,
         ];
     }
 

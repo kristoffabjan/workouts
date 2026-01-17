@@ -12,7 +12,7 @@ beforeEach(function () {
     $this->teamB = Team::factory()->create(['name' => 'Team B', 'slug' => 'team-b']);
 
     $this->user = User::factory()->create();
-    $this->user->teams()->attach($this->teamA, ['role' => TeamRole::Admin]);
+    $this->user->teams()->attach($this->teamA, ['role' => TeamRole::Coach]);
     $this->user->teams()->attach($this->teamB, ['role' => TeamRole::Coach]);
 
     $this->actingAs($this->user);
@@ -99,8 +99,9 @@ describe('User tenant access', function () {
         $panel = Filament::getPanel('admin');
         $tenants = $this->user->getTenants($panel);
 
-        expect($tenants)->toHaveCount(2)
-            ->and($tenants->pluck('id')->toArray())->toContain($this->teamA->id, $this->teamB->id);
+        expect($tenants)->toHaveCount(3)
+            ->and($tenants->pluck('id')->toArray())->toContain($this->teamA->id, $this->teamB->id)
+            ->and($this->user->hasPersonalTeam())->toBeTrue();
     });
 
     it('can access tenant the user belongs to', function () {

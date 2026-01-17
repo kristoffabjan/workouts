@@ -43,7 +43,8 @@ class TeamsTable
                     ->label('Team Type')
                     ->placeholder('All Teams')
                     ->trueLabel('Personal Teams')
-                    ->falseLabel('Organization Teams'),
+                    ->falseLabel('Organization Teams')
+                    ->default(false),
             ])
             ->recordActions([
                 EditAction::make(),

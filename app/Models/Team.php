@@ -68,11 +68,6 @@ class Team extends Model
         return $this->hasMany(Training::class);
     }
 
-    public function admins(): BelongsToMany
-    {
-        return $this->users()->wherePivot('role', TeamRole::Admin->value);
-    }
-
     public function coaches(): BelongsToMany
     {
         return $this->users()->wherePivot('role', TeamRole::Coach->value);

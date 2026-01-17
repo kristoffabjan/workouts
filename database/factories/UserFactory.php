@@ -52,11 +52,6 @@ class UserFactory extends Factory
         });
     }
 
-    public function admin(Team $team): static
-    {
-        return $this->forTeam($team, TeamRole::Admin);
-    }
-
     public function coach(Team $team): static
     {
         return $this->forTeam($team, TeamRole::Coach);

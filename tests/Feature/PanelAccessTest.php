@@ -76,7 +76,7 @@ describe('App Panel Access', function () {
     it('denies system admin access to app panel', function () {
         $admin = User::factory()->create(['is_admin' => true]);
         $team = Team::factory()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin->value]);
+        $admin->teams()->attach($team, ['role' => TeamRole::Coach->value]);
 
         $this->actingAs($admin)
             ->get("/app/{$team->slug}")

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\TeamRole;
+use App\Observers\UserObserver;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,6 +18,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
+#[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -100,11 +103,6 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->getRoleInTeam($team) === $role;
     }
 
-    public function isAdmin(Team|int $team): bool
-    {
-        return $this->hasRole($team, TeamRole::Admin);
-    }
-
     public function isCoach(Team|int $team): bool
     {
         return $this->hasRole($team, TeamRole::Coach);
@@ -113,6 +111,16 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function isClient(Team|int $team): bool
     {
         return $this->hasRole($team, TeamRole::Client);
+    }
+
+    public function personalTeam(): ?Team
+    {
+        return $this->teams()->where('is_personal', true)->first();
+    }
+
+    public function hasPersonalTeam(): bool
+    {
+        return $this->personalTeam() !== null;
     }
 
     public function initials(): string
