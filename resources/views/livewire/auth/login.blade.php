@@ -55,5 +55,11 @@
                 <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
             </div>
         @endif
+
+        <div class="text-sm text-center">
+            <flux:link href="/" variant="subtle">
+                {{ __('Back to homepage') }}
+            </flux:link>
+        </div>
     </div>
 </x-layouts::auth>

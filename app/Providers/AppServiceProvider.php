@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +30,15 @@ class AppServiceProvider extends ServiceProvider
         Blade::anonymousComponentPath(resource_path('views/layouts'), 'layouts');
 
         $this->configureDefaults();
+        $this->configureFilament();
+    }
+
+    protected function configureFilament(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+            fn (): View => view('filament.auth.login-footer'),
+        );
     }
 
     protected function configureDefaults(): void
