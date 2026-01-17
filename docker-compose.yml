@@ -75,6 +75,9 @@ services:
       - "8025:8025"
     networks:
       - workouts_network
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
 
   node:
     image: node:lts-alpine3.23
