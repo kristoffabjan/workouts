@@ -83,10 +83,15 @@ services:
     image: node:lts-alpine3.23
     container_name: workouts_node
     restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
     ports:
       - "3000:3000"
     networks:
       - workouts_network
+    tty: true
+    stdin_open: true
 
 
 networks:
