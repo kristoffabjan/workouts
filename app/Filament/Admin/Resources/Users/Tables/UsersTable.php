@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Teams\Tables;
+namespace App\Filament\Admin\Resources\Users\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -11,7 +11,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
-class TeamsTable
+class UsersTable
 {
     public static function configure(Table $table): Table
     {
@@ -20,30 +20,27 @@ class TeamsTable
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('slug')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('is_personal')
-                    ->boolean()
-                    ->label('Personal'),
-                TextColumn::make('owner.name')
-                    ->label('Owner')
+                TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('users_count')
-                    ->counts('users')
-                    ->label('Members')
+                IconColumn::make('is_admin')
+                    ->boolean()
+                    ->label('System Admin'),
+                TextColumn::make('teams_count')
+                    ->counts('teams')
+                    ->label('Teams')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TernaryFilter::make('is_personal')
-                    ->label('Team Type')
-                    ->placeholder('All Teams')
-                    ->trueLabel('Personal Teams')
-                    ->falseLabel('Organization Teams'),
+                TernaryFilter::make('is_admin')
+                    ->label('User Type')
+                    ->placeholder('All Users')
+                    ->trueLabel('System Admins')
+                    ->falseLabel('Regular Users'),
             ])
             ->recordActions([
                 EditAction::make(),

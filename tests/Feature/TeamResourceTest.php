@@ -1,46 +1,40 @@
 <?php
 
-use App\Enums\TeamRole;
-use App\Filament\Resources\Teams\Pages\CreateTeam;
-use App\Filament\Resources\Teams\Pages\EditTeam;
-use App\Filament\Resources\Teams\Pages\ListTeams;
+use App\Filament\Admin\Resources\Teams\Pages\CreateTeam;
+use App\Filament\Admin\Resources\Teams\Pages\EditTeam;
+use App\Filament\Admin\Resources\Teams\Pages\ListTeams;
 use App\Models\Team;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 
+beforeEach(function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+});
+
 describe('TeamResource access control', function () {
     it('allows system admin to view teams list', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
 
         Livewire::test(ListTeams::class)
             ->assertSuccessful();
     });
 
     it('denies non-admin users from viewing teams list', function () {
-        $team = Team::factory()->create();
-        $user = User::factory()->create();
-        $user->teams()->attach($team, ['role' => TeamRole::Coach]);
+        $user = User::factory()->create(['is_admin' => false]);
 
         $this->actingAs($user);
-        Filament::setTenant($team);
 
         Livewire::test(ListTeams::class)
             ->assertForbidden();
     });
 
     it('denies team admin (non-system admin) from viewing teams list', function () {
-        $team = Team::factory()->create();
         $teamAdmin = User::factory()->create(['is_admin' => false]);
-        $teamAdmin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($teamAdmin);
-        Filament::setTenant($team);
 
         Livewire::test(ListTeams::class)
             ->assertForbidden();
@@ -49,24 +43,18 @@ describe('TeamResource access control', function () {
 
 describe('TeamResource CRUD operations', function () {
     it('can render create page', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
 
         Livewire::test(CreateTeam::class)
             ->assertSuccessful();
     });
 
     it('can create a team', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
@@ -85,28 +73,20 @@ describe('TeamResource CRUD operations', function () {
     });
 
     it('can render edit page', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
+        $teamToEdit = Team::factory()->create();
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
-
-        $teamToEdit = Team::factory()->create();
 
         Livewire::test(EditTeam::class, ['record' => $teamToEdit->getRouteKey()])
             ->assertSuccessful();
     });
 
     it('can update a team', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
+        $teamToEdit = Team::factory()->create(['name' => 'Original Name']);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
-
-        $teamToEdit = Team::factory()->create(['name' => 'Original Name']);
 
         Livewire::test(EditTeam::class, ['record' => $teamToEdit->getRouteKey()])
             ->fillForm([
@@ -118,29 +98,23 @@ describe('TeamResource CRUD operations', function () {
         expect($teamToEdit->refresh()->name)->toBe('Updated Name');
     });
 
-    it('can list all teams regardless of tenant', function () {
-        $team = Team::factory()->create();
+    it('can list all teams', function () {
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
+        $team1 = Team::factory()->create();
+        $team2 = Team::factory()->create(['name' => 'Other Team']);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
-
-        $otherTeam = Team::factory()->create(['name' => 'Other Team']);
 
         Livewire::test(ListTeams::class)
-            ->assertCanSeeTableRecords([$team, $otherTeam]);
+            ->assertCanSeeTableRecords([$team1, $team2]);
     });
 });
 
 describe('TeamResource validation', function () {
     it('requires name field', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
@@ -152,12 +126,9 @@ describe('TeamResource validation', function () {
     });
 
     it('requires slug field', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
@@ -169,14 +140,10 @@ describe('TeamResource validation', function () {
     });
 
     it('requires unique slug', function () {
-        $team = Team::factory()->create();
         $admin = User::factory()->globalAdmin()->create();
-        $admin->teams()->attach($team, ['role' => TeamRole::Admin]);
+        Team::factory()->create(['slug' => 'existing-slug']);
 
         $this->actingAs($admin);
-        Filament::setTenant($team);
-
-        Team::factory()->create(['slug' => 'existing-slug']);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([

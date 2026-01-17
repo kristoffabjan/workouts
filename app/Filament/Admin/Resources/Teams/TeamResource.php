@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\Teams;
+namespace App\Filament\Admin\Resources\Teams;
 
-use App\Filament\Resources\Teams\Pages\CreateTeam;
-use App\Filament\Resources\Teams\Pages\EditTeam;
-use App\Filament\Resources\Teams\Pages\ListTeams;
-use App\Filament\Resources\Teams\Schemas\TeamForm;
-use App\Filament\Resources\Teams\Tables\TeamsTable;
+use App\Filament\Admin\Resources\Teams\Pages\CreateTeam;
+use App\Filament\Admin\Resources\Teams\Pages\EditTeam;
+use App\Filament\Admin\Resources\Teams\Pages\ListTeams;
+use App\Filament\Admin\Resources\Teams\Schemas\TeamForm;
+use App\Filament\Admin\Resources\Teams\Tables\TeamsTable;
 use App\Models\Team;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -24,8 +24,6 @@ class TeamResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Administration';
 
     protected static ?int $navigationSort = 100;
-
-    protected static bool $isScopedToTenant = false;
 
     public static function form(Schema $schema): Schema
     {
