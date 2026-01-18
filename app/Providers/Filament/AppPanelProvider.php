@@ -2,11 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Pages\Tenancy\RegisterTeam;
 use App\Models\Team;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -57,6 +59,14 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->tenantRegistration(RegisterTeam::class)
+            ->searchableTenantMenu()
+            ->tenantMenuItems([
+                'register' => MenuItem::make()
+                    ->label('Register new team')
+                    ->icon('heroicon-o-plus-circle')
+                    ->url(fn (): string => route('filament.app.tenant.registration')),
             ]);
     }
 }

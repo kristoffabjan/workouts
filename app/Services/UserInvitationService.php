@@ -13,14 +13,8 @@ use Illuminate\Support\Facades\Notification;
 
 class UserInvitationService
 {
-    public function inviteToTeam(string $email, Team $team, TeamRole $role, User $inviter): UserInvitation|User
+    public function inviteToTeam(string $email, Team $team, TeamRole $role, User $inviter): UserInvitation
     {
-        $existingUser = User::where('email', $email)->first();
-
-        if ($existingUser) {
-            return $this->attachExistingUserToTeam($existingUser, $team, $role);
-        }
-
         return $this->createInvitation($email, $team, $role, $inviter);
     }
 
@@ -63,17 +57,6 @@ class UserInvitationService
         });
     }
 
-    private function attachExistingUserToTeam(User $user, Team $team, TeamRole $role): User
-    {
-        if (! $user->teams()->where('team_id', $team->id)->exists()) {
-            $user->teams()->attach($team, ['role' => $role->value]);
-        }
-
-        $user->notify(new UserInvitedNotification(team: $team, isExistingUser: true));
-
-        return $user;
-    }
-
     private function createInvitation(string $email, ?Team $team, ?TeamRole $role, User $inviter): UserInvitation
     {
         $invitation = UserInvitation::create([
@@ -92,10 +75,12 @@ class UserInvitationService
 
     private function sendInvitationEmail(UserInvitation $invitation): void
     {
+        $userExists = User::where('email', $invitation->email)->exists();
+
         Notification::route('mail', $invitation->email)
             ->notify(new UserInvitedNotification(
                 team: $invitation->team,
-                isExistingUser: false,
+                isExistingUser: $userExists,
                 token: $invitation->token,
             ));
     }

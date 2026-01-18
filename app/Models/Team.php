@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TeamRole;
+use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +31,11 @@ class Team extends Model
             'settings' => 'array',
         ];
     }
+
+    /* public function getFilamentAvatarUrl(): ?string // needs to implement HasAvatar
+    {
+        return $this->avatar_url;
+    } */
 
     public function owner(): BelongsTo
     {

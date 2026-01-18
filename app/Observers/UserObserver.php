@@ -20,7 +20,7 @@ class UserObserver
 
     private function createPersonalTeam(User $user): void
     {
-        $baseName = $user->name."'s Team";
+        $baseName = $user->name.'- Personal';
         $baseSlug = Str::slug($user->name);
 
         $slug = $baseSlug;

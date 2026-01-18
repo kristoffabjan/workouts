@@ -34,13 +34,16 @@ class UserInvitedNotification extends Notification
     private function existingUserMail(): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('You have been added to a team')
+            ->subject('You have been invited to join a team')
             ->greeting('Hello!')
-            ->line("You have been added to the team: **{$this->team->name}**.");
+            ->line("You have been invited to join the team: **{$this->team->name}**.");
 
-        $message->action('Go to App', url('/app/'.$this->team->slug));
+        $acceptUrl = url('/invitation/accept/'.$this->token);
 
-        return $message->line('You can now access this team using your existing account.');
+        return $message
+            ->line('Click the button below to confirm and join the team.')
+            ->action('Join Team', $acceptUrl)
+            ->line('This invitation will expire in 7 days.');
     }
 
     private function newUserMail(): MailMessage

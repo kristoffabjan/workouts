@@ -7,6 +7,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class UserForm
 {
@@ -23,6 +24,7 @@ class UserForm
                     ->label('Role in Team')
                     ->options(TeamRole::class)
                     ->default(fn ($record) => $record?->getRoleInTeam(Filament::getTenant())?->value)
+                    ->disabled()
                     ->required(),
             ]);
     }

@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 describe('UserInvitationService', function () {
-    it('attaches existing user to team immediately', function () {
+    it('creates invitation for existing user requiring confirmation', function () {
         Notification::fake();
 
         $existingUser = User::factory()->create(['is_admin' => false]);
@@ -29,11 +29,13 @@ describe('UserInvitationService', function () {
             inviter: $this->inviter,
         );
 
-        expect($result)->toBeInstanceOf(User::class)
-            ->and($existingUser->fresh()->teams)->toHaveCount(2) // personal team + this team
-            ->and($existingUser->isClient($this->team))->toBeTrue();
+        expect($result)->toBeInstanceOf(UserInvitation::class)
+            ->and($result->email)->toBe($existingUser->email)
+            ->and($result->team_id)->toBe($this->team->id)
+            ->and($result->role)->toBe(TeamRole::Client)
+            ->and($existingUser->fresh()->teams)->toHaveCount(1); // only personal team, not yet added
 
-        Notification::assertSentTo($existingUser, UserInvitedNotification::class);
+        Notification::assertSentOnDemand(UserInvitedNotification::class);
     });
 
     it('creates invitation for new user', function () {
@@ -231,6 +233,49 @@ describe('AcceptInvitation Livewire Component', function () {
             ->set('password_confirmation', 'short')
             ->call('accept')
             ->assertHasErrors(['password']);
+    });
+
+    it('shows join team button for existing user without password fields', function () {
+        $existingUser = User::factory()->create([
+            'is_admin' => false,
+            'email' => 'existing@example.com',
+        ]);
+
+        $invitation = UserInvitation::factory()->create([
+            'email' => $existingUser->email,
+            'team_id' => $this->team->id,
+            'role' => TeamRole::Coach,
+            'invited_by' => $this->inviter->id,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        Livewire::test(\App\Livewire\AcceptInvitation::class, ['token' => $invitation->token])
+            ->assertSet('userExists', true)
+            ->assertSee('You already have an account')
+            ->assertSee('Join Team')
+            ->assertDontSee('Create Account');
+    });
+
+    it('allows existing user to accept invitation without password', function () {
+        $existingUser = User::factory()->create([
+            'is_admin' => false,
+            'email' => 'existing@example.com',
+        ]);
+
+        $invitation = UserInvitation::factory()->create([
+            'email' => $existingUser->email,
+            'team_id' => $this->team->id,
+            'role' => TeamRole::Coach,
+            'invited_by' => $this->inviter->id,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        Livewire::test(\App\Livewire\AcceptInvitation::class, ['token' => $invitation->token])
+            ->call('accept')
+            ->assertRedirect('/app/'.$this->team->slug);
+
+        expect($existingUser->fresh()->isCoach($this->team))->toBeTrue()
+            ->and($invitation->fresh()->isAccepted())->toBeTrue();
     });
 });
 

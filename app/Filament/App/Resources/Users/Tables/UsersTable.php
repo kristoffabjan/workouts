@@ -3,9 +3,11 @@
 namespace App\Filament\App\Resources\Users\Tables;
 
 use App\Enums\TeamRole;
-use Filament\Actions\DeleteAction;
+use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -18,7 +20,8 @@ class UsersTable
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->description(fn (User $record): ?string => self::isTeamOwner($record) ? 'Team Owner' : null),
                 TextColumn::make('email')
                     ->label('Email')
                     ->searchable()
@@ -66,15 +69,56 @@ class UsersTable
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make()
+                Action::make('remove')
                     ->label('Remove')
+                    ->icon('heroicon-o-user-minus')
+                    ->color('danger')
+                    ->visible(fn (User $record): bool => self::canRemoveUser($record))
+                    ->requiresConfirmation()
                     ->modalHeading('Remove from Team')
-                    ->modalDescription('Are you sure you want to remove this user from the team?')
-                    ->action(function ($record) {
+                    ->modalDescription(fn (User $record): string => "Are you sure you want to remove {$record->name} from this team?")
+                    ->action(function (User $record): void {
                         $tenant = Filament::getTenant();
                         $record->teams()->detach($tenant);
+
+                        Notification::make()
+                            ->success()
+                            ->title('User removed')
+                            ->body("{$record->name} has been removed from the team.")
+                            ->send();
                     }),
             ])
             ->defaultSort('name');
+    }
+
+    private static function isTeamOwner(User $record): bool
+    {
+        $tenant = Filament::getTenant();
+
+        return $tenant?->owner_id === $record->id;
+    }
+
+    private static function canRemoveUser(User $record): bool
+    {
+        $tenant = Filament::getTenant();
+        $currentUser = auth()->user();
+
+        if ($tenant?->is_personal) {
+            return false;
+        }
+
+        if ($tenant?->owner_id !== $currentUser->id) {
+            return false;
+        }
+
+        if ($record->id === $currentUser->id) {
+            return false;
+        }
+
+        if ($tenant?->owner_id === $record->id) {
+            return false;
+        }
+
+        return true;
     }
 }
