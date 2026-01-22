@@ -24,6 +24,22 @@ services:
     networks:
       - workouts_network
 
+  horizon:
+    build:
+      context: ./.docker/php
+      dockerfile: Dockerfile
+    container_name: workouts_horizon
+    restart: unless-stopped
+    command: php artisan horizon
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - php
+      - redis
+      - mysql
+    networks:
+      - workouts_network
+
   mysql:
     image: mysql:8.4
     container_name: workouts_mysql
