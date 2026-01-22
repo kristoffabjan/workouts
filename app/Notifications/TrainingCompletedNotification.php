@@ -2,8 +2,11 @@
 
 namespace App\Notifications;
 
+use App\Filament\App\Resources\Trainings\TrainingResource;
 use App\Models\Training;
 use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -22,15 +25,25 @@ class TrainingCompletedNotification extends Notification
         return ['database'];
     }
 
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
-        return [
-            'training_id' => $this->training->id,
-            'training_title' => $this->training->title,
-            'client_id' => $this->client->id,
-            'client_name' => $this->client->name,
-            'feedback' => $this->feedback,
-            'message' => "{$this->client->name} completed training: {$this->training->title}",
-        ];
+        $body = $this->feedback
+            ? "Feedback: {$this->feedback}"
+            : 'No feedback provided';
+
+        return FilamentNotification::make()
+            ->title("{$this->client->name} completed training")
+            ->body($body)
+            ->icon('heroicon-o-check-circle')
+            ->success()
+            ->actions([
+                Action::make('view')
+                    ->label('View Training')
+                    ->url(TrainingResource::getUrl('view', [
+                        'record' => $this->training,
+                        'tenant' => $this->training->team,
+                    ])),
+            ])
+            ->getDatabaseMessage();
     }
 }

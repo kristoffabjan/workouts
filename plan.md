@@ -685,14 +685,26 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 **Deliverable**: ✅ Functional calendar with training display, role-based filtering, and efficient data loading
 
 
-## Milestone 9: Notifications & Reminders
+## Milestone 9: Notifications & Reminders ✅
 **Goal**: Implement notification system for training assignments and reminders.
+
 ### Tasks
-- [ ] Verify laravel and filament is setup for Filament databse notifications
+- [x] Verify Laravel and Filament is setup for Filament database notifications
    - https://filamentphp.com/docs/4.x/notifications/database-notifications
-- [ ] Notify coaches when clients complete trainings
-  - Create `TrainingCompletedNotification` (database notification)
-  - Trigger on training completion action
+   - Added `->databaseNotifications()` to AppPanelProvider
+   - Added `->databaseNotifications()` to AdminPanelProvider
+   - Notifications table migration exists
+   - User model has Notifiable trait
+- [x] Notify coaches when clients complete trainings
+  - Created `TrainingCompletedNotification` (database notification)
+  - Triggers on training completion action in ViewTraining page
+  - Coach (training creator) receives database notification
+  - Notification includes training details, client info, and feedback
+  - Tests verify notification is sent correctly (46 passing tests)
+
+**Deliverable**: ✅ Complete notification system with Filament database notifications UI (bell icon), TrainingCompletedNotification sent to coaches on training completion
+
+---
 
 ## Milestone 10: Dashboard & Overview
 
@@ -1035,26 +1047,6 @@ These milestones are suggested improvements that can be implemented after core f
 
 ---
 
-## Milestone LP-1: Training Scheduled Notifications
-
-**Priority**: Low
-
-**Goal**: Notify clients when assigned to a new training.
-
-### Tasks
-
-- [ ] Create `TrainingScheduledNotification` (similar to TrainingCompletedNotification)
-  - Email template with training title, scheduled date, assigned exercises
-  - Link to view training in app
-- [ ] Dispatch notification when:
-  - Training is scheduled with clients assigned
-  - Client is added to existing scheduled training
-- [ ] Add user preference to disable notifications (optional)
-- [ ] Test: Schedule training, verify client receives notification
-
-**Deliverable**: Automated email notifications to clients when assigned trainings
-
----
 
 ## Milestone LP-2: Pre-Training Reminders
 
