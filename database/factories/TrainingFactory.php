@@ -27,7 +27,7 @@ class TrainingFactory extends Factory
             'title' => fake()->randomElement($titles),
             'content' => fake()->optional(0.7)->paragraphs(2, true),
             'status' => TrainingStatus::Draft,
-            'scheduled_date' => null,
+            'scheduled_at' => null,
             'created_by' => User::factory(),
         ];
     }
@@ -46,27 +46,27 @@ class TrainingFactory extends Factory
         ]);
     }
 
-    public function scheduled(?string $date = null): static
+    public function scheduled(mixed $dateTime = null): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => TrainingStatus::Scheduled,
-            'scheduled_date' => $date ?? fake()->dateTimeBetween('now', '+30 days'),
+            'scheduled_at' => $dateTime ?? fake()->dateTimeBetween('now', '+30 days'),
         ]);
     }
 
-    public function completed(?string $date = null): static
+    public function completed(?string $dateTime = null): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => TrainingStatus::Completed,
-            'scheduled_date' => $date ?? fake()->dateTimeBetween('-30 days', 'now'),
+            'scheduled_at' => $dateTime ?? fake()->dateTimeBetween('-30 days', 'now'),
         ]);
     }
 
-    public function skipped(?string $date = null): static
+    public function skipped(?string $dateTime = null): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => TrainingStatus::Skipped,
-            'scheduled_date' => $date ?? fake()->dateTimeBetween('-30 days', 'now'),
+            'scheduled_at' => $dateTime ?? fake()->dateTimeBetween('-30 days', 'now'),
         ]);
     }
 
@@ -74,7 +74,7 @@ class TrainingFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => TrainingStatus::Draft,
-            'scheduled_date' => null,
+            'scheduled_at' => null,
         ]);
     }
 

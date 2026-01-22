@@ -1,21 +1,20 @@
 <?php
 
-namespace App\Filament\App\Resources\Trainings\Tables;
+namespace App\Filament\Admin\Resources\Trainings\Tables;
 
-use App\Enums\TeamRole;
 use App\Enums\TrainingStatus;
-use App\Filament\App\Resources\Trainings\TrainingResource;
-use App\Models\Training;
-use App\Models\User;
+use App\Models\Team;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Facades\Filament;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -26,6 +25,10 @@ class TrainingsTable
         return $table
             ->columns([
                 TextColumn::make('title')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('team.name')
+                    ->label('Team')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('status')
@@ -51,6 +54,11 @@ class TrainingsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('team_id')
+                    ->label('Team')
+                    ->options(Team::pluck('name', 'id'))
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('status')
                     ->options(TrainingStatus::class),
                 Filter::make('scheduled_at')
@@ -70,44 +78,8 @@ class TrainingsTable
                                 $data['scheduled_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
                             );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-
-                        if ($data['scheduled_from'] ?? null) {
-                            $indicators['scheduled_from'] = 'From '.\Carbon\Carbon::parse($data['scheduled_from'])->toFormattedDateString();
-                        }
-
-                        if ($data['scheduled_until'] ?? null) {
-                            $indicators['scheduled_until'] = 'Until '.\Carbon\Carbon::parse($data['scheduled_until'])->toFormattedDateString();
-                        }
-
-                        return $indicators;
                     }),
-                SelectFilter::make('assigned_user')
-                    ->label('Assigned To')
-                    ->options(function () {
-                        $team = Filament::getTenant();
-                        if (! $team) {
-                            return [];
-                        }
-
-                        return User::whereHas('teams', function (Builder $query) use ($team) {
-                            $query->where('team_id', $team->id)
-                                ->where('role', TeamRole::Client->value);
-                        })->pluck('name', 'id')->toArray();
-                    })
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (! $data['value']) {
-                            return $query;
-                        }
-
-                        return $query->whereHas('assignedUsers', function (Builder $q) use ($data) {
-                            $q->where('user_id', $data['value']);
-                        });
-                    })
-                    ->searchable()
-                    ->preload(),
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 ViewAction::make(),
@@ -117,18 +89,10 @@ class TrainingsTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
-            ->recordUrl(function (Training $record): string {
-                $team = Filament::getTenant();
-                $user = auth()->user();
-
-                if ($team && $user && $user->isCoach($team)) {
-                    return TrainingResource::getUrl('edit', ['record' => $record]);
-                }
-
-                return TrainingResource::getUrl('view', ['record' => $record]);
-            })
             ->defaultSort('scheduled_at', 'desc');
     }
 }

@@ -40,22 +40,79 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 
 ### Tasks
 
-- [ ] Create Laravel 12 project
+- [x] Create Laravel 12 project
   - `composer create-project laravel/laravel .`
-- [ ] Configure `.env` for Docker services
+- [x] Configure `.env` for Docker services
   - DB_HOST=mysql, DB_DATABASE=workouts
   - CACHE_DRIVER=redis, REDIS_HOST=redis
   - MAIL_HOST=mailpit, MAIL_PORT=1025
-- [ ] Install Filament 4
+- [x] Install Filament 4
   - `composer require filament/filament`
   - `php artisan filament:install --panels`
-- [ ] Run initial migrations
+- [x] Run initial migrations
   - `php artisan migrate`
-- [ ] Create admin user
+- [x] Create admin user
   - `php artisan make:filament-user`
-- [ ] Test: Access Filament panel at http://localhost/admin
+- [x] Test: Access Filament panel at http://localhost/admin
 
 **Deliverable**: Laravel + Filament admin panel accessible and functional
+
+---
+
+### System Purpose & Architecture
+
+The app is a **multi-tenant workout training management system** designed for:
+- **Gyms/Organizations (Teams)** to manage their coaches and clients
+- **Individual Users** to manage their own workouts independently
+- **Coaches** to create exercise libraries and assign training programs
+- **Clients** to view assigned workouts and track completion
+
+#### User Types
+
+| Type | Description |
+|------|-------------|
+| **Team User** | Belongs to one or more teams (gym/organization). Has a role within each team. |
+| **Individual User** | Works independently with a personal team auto-created for them. Full control over their own data. |
+
+#### Roles & Workflow
+| Role | Capabilities |
+|------|-------------|
+| **Admin** | Full team management, all coach abilities |
+| **Coach** | Create exercises, create/schedule trainings, assign to clients, view feedback |
+| **Client** | View assigned trainings, mark complete, provide feedback |
+
+#### Individual User Architecture
+
+Individual users are implemented using **personal teams**:
+- When an individual user is invited/registered, a personal team is auto-created
+- The `teams.is_personal` flag distinguishes personal teams from organization teams
+- The user becomes the Admin of their personal team
+- All existing team-scoped logic works unchanged
+- Individual users can later be invited to organization teams while keeping their personal space
+
+#### User Invitation Flow
+
+1. **Inviting to a Team**: Admin/Coach invites user by email
+   - If user exists: attach to team with specified role
+   - If new user: create account, attach to team, send password setup email
+
+2. **Inviting as Individual**: Invite user for independent use
+   - Create user account
+   - Create personal team for them (`is_personal = true`)
+   - Attach user as Admin of their personal team
+   - Send password setup email
+
+#### Core Tables Overview
+
+| Table | Purpose |
+|-------|---------|
+| `teams` | Represents a gym/organization OR a personal space. `is_personal` flag distinguishes. |
+| `team_user` (pivot) | Associates users with teams and defines their role. A user can belong to multiple teams with different roles. |
+| `user_invitations` | Tracks pending invitations with tokens for password setup. |
+| `exercises` | Catalog of exercises per team with videos and tags for filtering. |
+| `trainings` | Individual workout sessions that can be scheduled and assigned to clients. |
+| `exercise_training` (pivot) | Links exercises to trainings with ordering and notes. |
+| `training_user` (pivot) | Assigns trainings to clients and tracks completion status and feedback. |
 
 ---
 
@@ -65,21 +122,18 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 
 ### 2.1 Core Tables Setup
 
-#### Migration: create_teams_table
+#### Migration: create_teams_table ✅
 ```php
 - id
 - name (string, unique)
 - slug (string, unique)
+- is_personal (boolean, default false)
+- owner_id (foreign -> users, nullable, nullOnDelete)
 - settings (json, nullable)
 - timestamps
 ```
 
-#### Migration: add_team_fields_to_users_table
-```php
-- Modify existing users table (no changes needed initially)
-```
-
-#### Migration: create_team_user_table
+#### Migration: create_team_user_table ✅
 ```php
 - id
 - team_id (foreign -> teams)
@@ -87,36 +141,33 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 - role (enum: admin, coach, client)
 - timestamps
 - unique(team_id, user_id)
-- indexes on team_id, user_id
 ```
 
-#### Migration: create_exercises_table
+#### Migration: create_exercises_table ✅
 ```php
 - id
-- team_id (foreign -> teams)
+- team_id (foreign -> teams, NULLABLE, nullOnDelete)
 - name (string)
 - description (text, nullable)
 - video_urls (json, nullable)
 - tags (json, nullable)
 - created_by (foreign -> users)
 - timestamps, softDeletes
-- index on team_id, created_by
 ```
 
-#### Migration: create_trainings_table
+#### Migration: create_trainings_table ✅
 ```php
 - id
-- team_id (foreign -> teams)
+- team_id (foreign -> teams, NULLABLE, nullOnDelete)
 - title (string)
 - content (longText, nullable)
 - status (enum: draft, scheduled, completed, skipped) default draft
 - scheduled_date (date, nullable)
 - created_by (foreign -> users)
 - timestamps, softDeletes
-- indexes on team_id, created_by, scheduled_date, status
 ```
 
-#### Migration: create_training_exercise_table
+#### Migration: create_exercise_training_table ✅
 ```php
 - id
 - training_id (foreign -> trainings)
@@ -124,10 +175,9 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 - notes (text, nullable)
 - sort_order (integer, default 0)
 - timestamps
-- indexes on training_id, exercise_id
 ```
 
-#### Migration: create_training_user_table
+#### Migration: create_training_user_table ✅
 ```php
 - id
 - training_id (foreign -> trainings)
@@ -136,177 +186,410 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 - feedback (text, nullable)
 - timestamps
 - unique(training_id, user_id)
-- indexes on training_id, user_id
 ```
 
-### 2.2 Eloquent Models
+#### Migration: create_user_invitations_table ✅
+```php
+- id
+- email (string)
+- team_id (foreign -> teams, nullable, cascadeOnDelete)
+- role (TeamRole enum, nullable)
+- token (string, unique)
+- invited_by (foreign -> users, cascadeOnDelete)
+- accepted_at (timestamp, nullable)
+- expires_at (timestamp)
+- timestamps
+```
 
-#### Models to Create
-- [ ] `Team` model
-  - Relationships: users (belongsToMany), exercises (hasMany), trainings (hasMany)
-  - Casts: settings as array
-- [ ] `Exercise` model
-  - Relationships: team (belongsTo), creator (belongsTo User), trainings (belongsToMany)
+### 2.2 Eloquent Models ✅
+
+#### Models Created
+- [x] `Team` model
+  - Relationships: users (belongsToMany), exercises (hasMany), trainings (hasMany), owner (belongsTo User)
+  - Casts: is_personal as boolean, settings as array
+  - Scopes: scopeOrganizations(), scopePersonal()
+  - Methods: isPersonal()
+  - Helper methods: admins(), coaches(), clients()
+- [x] `Exercise` model
+  - Relationships: team (belongsTo, nullable), creator (belongsTo User), trainings (belongsToMany)
   - Casts: video_urls as array, tags as array
-  - Scopes: forTeam($teamId)
+  - Scopes: forTeam($teamId), personal(), forUser($userId)
+  - Methods: isPersonal()
   - Soft deletes
-- [ ] `Training` model
-  - Relationships: team (belongsTo), creator (belongsTo User), exercises (belongsToMany), assignedUsers (belongsToMany through training_user)
-  - Casts: status as enum
-  - Scopes: forTeam($teamId), scheduled(), draft(), completed()
+- [x] `Training` model
+  - Relationships: team (belongsTo, nullable), creator (belongsTo User), exercises (belongsToMany), assignedUsers (belongsToMany)
+  - Casts: status as TrainingStatus enum, scheduled_date as date
+  - Scopes: forTeam($teamId), scheduled(), draft(), completed(), personal(), forUser($userId)
+  - Methods: isPersonal()
   - Soft deletes
-- [ ] Update `User` model
-  - Relationships: teams (belongsToMany), createdExercises (hasMany), createdTrainings (hasMany), assignedTrainings (belongsToMany through training_user)
-  - Methods: hasRole($teamId, $role), isAdmin($teamId), isCoach($teamId), isClient($teamId)
+- [x] `User` model
+  - Relationships: teams (belongsToMany), createdExercises (hasMany), createdTrainings (hasMany), assignedTrainings (belongsToMany)
+  - Methods: getRoleInTeam(), hasRole(), isAdmin(), isCoach(), isClient()
+- [x] `UserInvitation` model
+  - Relationships: team (belongsTo, nullable), inviter (belongsTo User)
+  - Casts: role as TeamRole, accepted_at as datetime, expires_at as datetime
+  - Methods: isExpired(), isAccepted(), isPending(), isForTeam(), isForIndividual(), generateToken()
 
-### 2.3 Enums
+### 2.3 Enums ✅
 
-- [ ] Create `app/Enums/TeamRole.php`
-  - Admin, Coach, Client
-- [ ] Create `app/Enums/TrainingStatus.php`
-  - Draft, Scheduled, Completed, Skipped
+- [x] `app/Enums/TeamRole.php` - Admin, Coach, Client (with HasLabel, HasColor, HasIcon)
+- [x] `app/Enums/TrainingStatus.php` - Draft, Scheduled, Completed, Skipped (with HasLabel, HasColor, HasIcon)
 
-### 2.4 Database Seeder
+### 2.4 Database Seeders ✅
 
-- [ ] Create `TeamSeeder`
-  - Create 2 demo teams
-- [ ] Create `UserSeeder`
-  - Create admin user for each team
-  - Create 2 coaches and 4 clients for Team 1
-- [ ] Create `ExerciseSeeder`
-  - Create 10-15 sample exercises per team
-  - Include video URLs and tags
-- [ ] Create `TrainingSeeder`
-  - Create 5 draft trainings
-  - Create 10 scheduled trainings (various dates)
-  - Assign exercises to trainings
-  - Assign trainings to clients
-- [ ] Update `DatabaseSeeder` to call all seeders
+- [x] `TeamSeeder` - Creates 4 named teams + 3 factory teams
+- [x] `UserSeeder` - Global admin + admin/coaches/clients per team
+- [x] `ExerciseSeeder` - 10 exercises per team
+- [x] `TrainingSeeder` - Draft, scheduled, and completed trainings with exercises and assigned users
+- [x] `DatabaseSeeder` - Calls all seeders in order
 
-**Deliverable**: Complete database schema with seedable test data
+**Deliverable**: ✅ Complete database schema with seedable test data
 
----
 
-## Milestone 3: Team Management & Multi-Tenancy
+
+## Milestone 3: Team Management & Multi-Tenancy ✅
 
 **Goal**: Implement Filament multi-tenancy with team switching and scoped data.
 
-### Tasks
+### 3.1 Main Tasks
 
-- [ ] Configure Filament panel for tenancy
-  - Register `Team` as tenant model
-  - Configure tenant relationship on User model
-- [ ] Create middleware for team context
-  - Ensure all queries are scoped to current team
-- [ ] Create `TeamResource` in Filament
-  - Fields: name, slug
-  - Only accessible to system admins (future feature)
-- [ ] Create team switcher component
-  - Use Filament's tenant menu
-- [ ] Test: Switch between teams, verify data isolation
+- [x] Configure Filament panel for tenancy
+  - Registered `Team` as tenant model with slug attribute
+  - Implemented `HasTenants` interface on User model with `getTenants()` and `canAccessTenant()`
+- [x] Create BelongsToTenant trait for automatic scoping
+  - Global scope filters queries by current tenant
+  - Auto-assigns team_id on model creation
+  - Applied to Exercise and Training models
+- [x] Update seeders for multi-team testing
+  - Super Admin attached to all teams
+  - Created multi-team user with different roles in each team
+- [x] Test: Switch between teams, verify data isolation
+  - 11 passing tests for data isolation, tenant switching, and access control
 
-**Deliverable**: Working multi-tenancy with team switching
+### 3.2 Team resource in Filament ✅
+
+- [x] Create `TeamResource` in Filament
+  - Table columns: name, slug, is_personal, owner (name), members count, created_at
+  - Form fields: name (auto-generates slug), slug, is_personal (toggle), owner (searchable select)
+  - Actions: edit, delete
+  - Bulk actions: delete
+  - Filter: by team type (personal/organization)
+- [x] Create `TeamPolicy` for system admin access only
+  - All abilities check `$user->is_admin`
+- [x] Disabled tenancy scoping (`$isScopedToTenant = false`)
+  - Resource shows all teams regardless of current tenant
+- [x] Wrote 11 smoke tests for TeamResource
+
+### 3.3 Filament panels ✅
+- [x] Adapt existing Admin filament panel, to be accesible via admin/login route only for system admins. On route / there should be simple button to navigate to "Admin login"
+- [x] Create separate Filament panel called App(route /app) for personal users and teams(coaches and athletes). Accessible via /login route. On route / there should be simple button to navigate to "User login". Panel should be accessible for all roles except system admins.
+
+#### 3.3.1 Admin panel base setup ✅
+- [x] Create or just check main resources that are shown to system admins:
+  - TeamResource (moved to `App\Filament\Admin\Resources\Teams`)
+  - UserResource (created in `App\Filament\Admin\Resources\Users`)
+
+#### 3.3.2 App panel base setup ✅
+- [x] Create new filament panel called App (AppPanelProvider).
+- [x] Divide it as multi-tenant aware panel as Team entity acts as tenant.
+- [x] User in this panel can be coach or client/athlete
+  - Panel access controlled via `canAccessPanel()` in User model
+- [x] Create basic resources that are shown to team users(coach and clients):
+  - ExerciseResource (team scoped, in `App\Filament\App\Resources\Exercises`)
+  - TrainingResource (team scoped, in `App\Filament\App\Resources\Trainings`)
+  - Current team is switched via filaments native top-level team switcher
+
+### 3.4 Filament homepage ✅
+- [x] Replace current Laravel default / route with landing page showing:
+  - Admin panel (/admin) - "Admin Login" button
+  - User panel (/app) - "User Login" button
+
+**Deliverable**:  Working multi-tenancy with team switching, data isolation, and TeamResource for system admins. Additional distinction of app into two panels: Base, original Admin panel for system admins to manage teams and users; App panel for team users to manage workouts within their teams.
+Basic filament homepage with links to both panels.
 
 ---
 
-## Milestone 4: User Management
+## Milestone 4: User Management & Invitations ✅
 
-**Goal**: Manage users within teams with role assignment.
+**Goal**: Manage users within teams with role assignment and invitation system.
 
-### Tasks
+### 4.1 User Resource
 
-- [ ] Create `UserResource` in Filament
-  - Table columns: name, email, role (in current team), created_at
-  - Form fields: name, email, password, role (for current team)
+### 4.1 Refactor team roles ✅
+- [x] Include only roles coach and client/athlete, remove admin role from team_user pivot table
+  - Coach
+  - Client/Athlete
+  - Remove team admin role from team_user pivot table and related code
+  - Migrate fresh on any step if needed, edit existing tables
+
+### 4.2 User resource in App panel ✅
+- [x] In App panel, make user resource. Scoped by team and visible to coaches only. List users in current team with their role badges.
+- [x] Coaches can manage users within their team (view, remove)
+- [x] Clients/athletes cannot access User resource.
+- [x] Certain coach can be coach in multiple teams, but also he can be client/athlete in other teams. Make sure role is isolated per team(i think it already is, but double check).
+
+### 4.3 Personal team for users(coaches and clients/athletes) ✅
+- [x] If user is created/invited as individual user (not to a team), create personal team for them with is_personal = true flag.
+- [x] Make sure, each user belong to personal team. In that way, user can plan his own trainings and exercises even if not invited to any organization team. Provide this option for both coaches(they can plan their training for their spare time etc.) and clients/athletes.
+
+### 4.4 User Resource ✅
+
+- [x] Create `UserResource` in Filament (tenant-scoped)
+  - Table columns: name, email, role badge (in current team), created_at
+  - Form fields: name, email (readonly), role (for current team)
   - Filters: by role
   - Actions: edit, delete (remove from team)
   - Bulk actions: change role
-  - Policies: Only admins and coaches can access
-- [ ] Create custom "Add User to Team" action
-  - Check if email exists in system
-  - If yes: attach existing user to current team with role
-  - If no: create new user and attach to team
-  - Validate unique email per team
-- [ ] Create policies for UserResource
-  - `viewAny`: admin, coach
-  - `view`, `create`, `update`: admin only
-  - `delete`: admin only (removes from team, doesn't delete user)
-- [ ] Test: Add existing user to multiple teams, verify role isolation
+  - Policies: Admins see all users, Coaches see clients only (via query scope)
+- [x] Verify user resource in both admin and app panels
+  - Admin panel: full user management across all teams
+  - App panel: team-scoped user management for coaches only
 
-**Deliverable**: Full user management within team context
+### 4.5 Team Membership Management ✅
+- [x] Simplified approach: UserResource handles team membership directly
+  - No separate relation manager needed - UserResource is tenant-scoped
+- [x] Ensure role isolation per team
+  - User can have different roles in different teams
+  - Role changes affect only current team
+  - Tests verify role isolation across teams
+- [x] In admin panel, team resource, add team members as relationship manager, so system admin can see all users per team and their roles.
+
+### 4.6 User Invitation System 
+
+- [x] Create `InviteUserToTeam` Filament Action (on ListUsers page)
+  - Form: email, role (select)
+  - Uses `UserInvitationService::inviteToTeam()`
+  - If user exists: attach to team immediately, send notification email
+  - If new user: create invitation, send email with password setup link, attach to personal team as well
+
+- [x] Create `UserInvitationService` with `inviteAsIndividual()` method
+  - Creates invitation with password setup link
+  - Auto-creates personal team upon acceptance
+
+- [x] Create invitation acceptance flow
+  - Route: `/invitation/accept/{token}` (Livewire component)
+  - Form: set password (if new user)
+  - Validates token, creates user if needed, accepts invitation
+  - Redirects to Filament panel
+
+- [x] Create `UserInvitedNotification` (handles both existing and new users)
+  - Contains invitation link with token for new users
+  - Contains team access notification for existing users
+  - Link expires after 7 days
+
+- [x] Review above tasks and ensure:
+  - Admin can create teams and invite coaches
+  - Admin can invite users as individual users
+  - Coach can invite clients to their team
+
+### 4.7 Policies ✅
+
+- [x] Create `UserPolicy` for UserResource
+  - `viewAny`: admin, coach (coach sees clients only via query scope)
+  - `view`: admin, coach (for clients)
+  - `create`, `update`: admin only
+  - `delete`: admin only (removes from team, doesn't delete user)
+  - `inviteToTeam`: admin only
+
+### 4.8 User invitation improvements and completions ✅
+- [x] In admin panel, replace "New user" button with "Invite user to team" action.
+  - [x] User is invited in app as general (inviteAsIndividual)
+  - [x] On user creation, personal team is created for them (via UserObserver)
+- [x] In app panel, users can belong to multiple teams. Make user able to create new teams from app panel.
+  - [x] Create "Register new team" page in app panel (RegisterTeam in App\Filament\App\Pages\Tenancy)
+  - [x] On team creation, user becomes coach/owner of that team
+  - [x] User can switch between teams via top-level team switcher
+  - [x] User can create multiple teams
+  - [x] Invited users must accept invitation to team, sent via email with token link
+  - [x] User can leave team from Team Settings page in app panel
+  - [x] Team owner cannot leave team, must transfer ownership first (Transfer Ownership action)
+  - [x] Team owner can remove other users from team (Remove action in UserResource)  
+
+### 4.9 Testing ✅
+
+- [x] Test: Invite existing user to team (UserInvitationTest)
+- [x] Test: Invite new user to team, complete password setup (UserInvitationTest)
+- [x] Test: Invite individual user, verify personal team created (UserInvitationTest)
+- [x] Test: Add existing user to multiple teams, verify role isolation (UserInvitationTest)
+- [x] Test: Expired invitation cannot be accepted (UserInvitationTest)
+- [x] Test: UserResource access control for admin, coach, client (UserResourceTest)
+- [x] Test: UserResource shows correct users per role (UserResourceTest)
+- [x] Test: UserResource role filtering (UserResourceTest)
+
+
+**Deliverable**: Full user management with invitation system and password setup flow (27 passing tests)
 
 ---
 
 ## Milestone 5: Exercise Library
 
-**Goal**: Create and manage exercise library with videos and tags.
+**Goal**: Create global exercise library and enable teams to copy exercises to their collection.
+
+### Design Decision
+When teams "attach" global exercises, **create a copy** with `team_id` set to the team (full independence, teams can customize).
 
 ### Tasks
 
-- [ ] Create `ExerciseResource` in Filament
-  - Table columns: name, tags, created_by, created_at
-  - Table filters: by tags, by creator
-  - Form fields:
-    - name (required, text input)
-    - description (rich text editor)
-    - video_urls (repeater with URL inputs)
-    - tags (tag input or select)
-  - Actions: edit, delete, duplicate
-  - Bulk actions: add tag, delete
-- [ ] Implement global search for exercises
-  - Search by name and tags
-- [ ] Create policies for ExerciseResource
-  - `viewAny`, `view`: all roles
-  - `create`, `update`: coach, admin
-  - `delete`: creator or admin
-- [ ] Ensure exercises are team-scoped
-  - Add global scope to Exercise model
-  - Set team_id automatically on creation
-- [ ] Test: Create exercise with multiple videos and tags
+#### 5.1 GlobalExerciseSeeder ✅
+- [x] Create `database/seeders/GlobalExerciseSeeder.php`
+  - Idempotent using `firstOrCreate()` by name + team_id=null
+  - ~60-70 exercises across broad categories:
+    - Olympic Weightlifting (8): Snatch, Clean & Jerk, Power Clean, etc.
+    - Strength - Lower Body (10): Squat, Deadlift, Lunge, Hip Thrust, etc.
+    - Strength - Upper Body - Push (8): Bench Press, Overhead Press, Dips, etc.
+    - Strength - Upper Body - Pull (8): Pull-ups, Rows, Lat Pulldown, etc.
+    - Cardio (8): Running, Cycling, Rowing, Jump Rope, etc.
+    - Core & Abs (8): Plank, Dead Bug, Hanging Leg Raise, etc.
+    - Flexibility & Mobility (6): Hip stretches, Shoulder mobility, etc.
+    - Plyometrics (6): Box Jump, Burpees, Jump Squat, etc.
+    - Functional & Bodyweight (6): Push-ups, Lunges, Air Squat, etc.
+  - Tags: strength, cardio, flexibility, core, upper-body, lower-body, full-body, compound, isolation, olympic, plyometric, bodyweight, machine, dumbbell, barbell, kettlebell, unilateral, bilateral, push, pull, endurance, power, mobility
+  - Global exercises have `team_id = null`, `created_by = system admin`
+- [x] Update `DatabaseSeeder` to call `GlobalExerciseSeeder` before `ExerciseSeeder`
 
-**Deliverable**: Functional exercise library with full CRUD
+#### 5.2 Exercise Model Updates ✅
+- [x] Add `scopeGlobal(Builder $query)` to Exercise model - filters `whereNull('team_id')`
+
+#### 5.3 Admin Panel ExerciseResource (Global Exercises) ✅
+- [x] Create `app/Filament/Admin/Resources/Exercises/ExerciseResource.php`
+  - Override `getEloquentQuery()` to show only global exercises (`team_id = null`)
+  - Table columns: name, tags (badge), created_at
+  - Form: name, description (rich text), video_urls (repeater), tags (TagsInput)
+  - Actions: edit, delete
+- [x] Create pages: ListExercises, CreateExercise, EditExercise
+- [x] Create Schemas/ExerciseForm.php and Tables/ExercisesTable.php
+
+#### 5.4 ExerciseLibraryService ✅
+- [x] Create `app/Services/ExerciseLibraryService.php`
+  - Method: `copyToTeam(array $exerciseIds, Team $team, User $copiedBy): int`
+  - Fetches global exercises, skips if name already exists in team
+  - Creates copies with team_id set, returns count
+
+#### 5.5 App Panel - Add from Library Action ✅
+- [x] Update `app/Filament/App/Resources/Exercises/Pages/ListExercises.php`
+  - Add header action "Add from Library"
+  - Simple searchable multiselect (search by name and tags)
+  - Calls ExerciseLibraryService to copy selected exercises
+  - Success notification with count
+
+#### 5.6 Enhance ExercisesTable (App Panel) ✅
+- [x] Add filters to `Tables/ExercisesTable.php`:
+  - Filter by tag (from JSON field)
+  - Filter by creator
+
+#### 5.7 Global Search ✅
+- [x] Configure global search in App panel ExerciseResource
+  - Search attributes: name, tags
+  - Result details: show tags
+
+#### 5.8 ExercisePolicy ✅
+- [x] Create `app/Policies/ExercisePolicy.php`
+  - viewAny: system admin (global) OR team member (team-scoped)
+  - view: system admin OR team member
+  - create: system admin (global) OR coach (team-scoped)
+  - update/delete: system admin (global) OR coach (team-scoped)
+- [x] Policy auto-discovered by Laravel (no manual registration needed)
+
+#### 5.9 Tests ✅
+- [x] Create `tests/Feature/ExerciseResourceTest.php` (App Panel)
+  - Coach can view, create, edit, delete exercises
+  - Client can only view exercises
+  - Exercises are team-scoped
+- [x] Create `tests/Feature/ExerciseLibraryTest.php`
+  - GlobalExerciseSeeder is idempotent
+  - Coach can add exercises from library
+  - Duplicate names are skipped
+  - Copied exercises have correct team_id and created_by
+  - Search by name and tag works
+- [x] Create `tests/Feature/AdminExerciseResourceTest.php`
+  - System admin can CRUD global exercises
+  - Only global exercises shown
+  - Non-admin cannot access
+
+**Deliverable**: ✅ Global exercise library with copy-to-team functionality (41 passing tests)
 
 ---
 
-## Milestone 6: Training Management
+## Milestone 6: Training Management ✅
 
 **Goal**: Create and manage trainings with exercise attachments.
 
 ### Tasks
 
-- [ ] Create `TrainingResource` in Filament
-  - Table columns: title, status, scheduled_date, assigned_to (count), created_at
+- [x] Create `TrainingResource` in Filament
+  - Table columns: title, status, scheduled_at, assigned_to (count), exercises (count), created_at
+  - [x] Port scheduled_date to scheduled_at (datetime, nullable) in DB migration and model
   - Table filters: by status, by date range, by assigned user
   - Form fields:
     - title (required, text input)
     - content (rich text editor)
     - status (select)
-    - scheduled_date (date picker, nullable)
+    - scheduled_at (datetime picker, nullable)
   - Relation manager: exercises (attach/detach with pivot notes and sort_order)
   - Relation manager: assignedUsers (clients only)
-  - Actions: edit, delete, duplicate, schedule (custom)
-  - Bulk actions: change status, delete
-- [ ] Create `ExerciseRelationManager` for trainings
-  - Attach form: select exercise, add notes, set sort_order
-  - Table: exercise name, notes, sort_order
-  - Actions: edit notes, detach, reorder
-- [ ] Create `AssignedUsersRelationManager` for trainings
+  - Actions: view, edit, delete
+  - Bulk actions: delete
+- [x] Check and refactor `ExercisesRelationManager` for trainings
+  - Review Laravel docs: https://laravel.com/docs/12.x/eloquent-relationships#many-to-many
+  - Filament docs: https://filamentphp.com/docs/4.x/resources/managing-relationships
+  - You can define intermediate table model: https://filamentphp.com/docs/4.x/resources/managing-relationships
+    - Fixed TrainingExercise model to extend Pivot with `$incrementing = true`
+  - Training - belongsToMany exercises via pivot table with `->using(TrainingExercise::class)`
+  - Exercise - belongsToMany trainings via pivot table with `->using(TrainingExercise::class)`
+  - Pivot table exercise_training with id, notes, sort_order, and timestamps
+  - Added to both admin and app panels with `allowDuplicates()`
+  - Actions: Attach, detach
+  - Attach form: select exercise(s), add notes, set sort_order
+  - Filament Table fields: exercise name, notes, sort_order
+  - Actions: edit pivot data, detach, reorder (drag-and-drop)
+- [x] Check and refactor `AssignedUsersRelationManager` for trainings
+  - Review Laravel docs: https://laravel.com/docs/12.x/eloquent-relationships#many-to-many
+  - Filament docs: https://filamentphp.com/docs/4.x/resources/managing-relationships
+  - You can define intermediate table model: https://filamentphp.com/docs/4.x/resources/managing-relationships
+    - Fixed TrainingUser model to extend Pivot with `$incrementing = true`
+  - Training - belongsToMany users (clients) via pivot table with `->using(TrainingUser::class)`
+  - User - belongsToMany trainings via pivot table with `->using(TrainingUser::class)`
+  - Pivot table training_user with id, completed_at, feedback, and timestamps
+  - Added to both admin and app panels
+  - Actions: Attach, detach
   - Attach form: select client(s) from current team
-  - Table: name, assigned_at, completed_at, feedback
+  - Filament Table fields: name, assigned_at, completed status, completed_at, feedback
   - Filters: completed/pending
-  - View client feedback
-- [ ] Create policies for TrainingResource
-  - `viewAny`: all roles (filtered by role)
-  - `view`: creator, assigned clients, admins
-  - `create`, `update`: coach, admin
-  - `delete`: creator or admin
-- [ ] Implement view filters based on role
-  - Clients: only see assigned trainings
-  - Coaches: see all trainings or filter by client
-  - Admins: see all trainings
-- [ ] Test: Create training with exercises, assign to clients
+  - View action to see client feedback details
+- [x] Check again `TrainingPolicy` for authorization
+  - `viewAny`: team member OR system admin
+  - `view`: coach (any team training) OR assigned client OR system admin
+  - `create`, `update`, `delete`: coach OR system admin
+- [x] Implement view filters based on role
+  - Clients: only see assigned trainings (via query scope in getEloquentQuery)
+  - Coaches: see all team trainings with filters
+  - System admins: see all trainings across all teams
+- [x] Ensure trainings are team-scoped
+  - BelongsToTenant trait handles automatic scoping
+  - team_id set automatically on creation
+  - Exercise attachment limited to team exercises only
+- [x] Create Admin Panel TrainingResource
+  - Shows all trainings across all teams
+  - Filter by team, status, date range
+  - Full CRUD with relation managers
+- [x] Add ability for client/athlete to mark training as completed. This sets timestamp completed at in pivot table training_user. Also provide optional feedback textarea.
+  - Created `MarkAsComplete` action on ViewTraining page (Filament action)
+    - Form: feedback (textarea, optional)
+    - Logic: update pivot record with completed_at = now(), save feedback
+    - Show this action only when time is past scheduled_at date
+    - Notification: "Training marked as complete", add notification to coach (db notification)
+    - Created `TrainingCompletedNotification` for database notifications
+    - Added `markComplete` policy method to TrainingPolicy
+  - Action visible on TrainingResource view page (visible to clients only)
+  - [x] For client/athlete, show feedback form on training view/edit page
+    - Added "Your Completion" section on ViewTraining page showing completion timestamp and feedback
+    - Added "Edit Feedback" action to allow client to update feedback after completion
+    - On MarkAsComplete action, training status is set to Completed
+- [x] Tests: 40 passing tests
+  - TrainingResourceTest (29 tests): list access, view, create, edit, delete, filtering, mark as complete, edit feedback
+  - AdminTrainingResourceTest (11 tests): access control, view all teams, CRUD, filtering
 
-**Deliverable**: Full training CRUD with exercise and client assignment
+**Deliverable**: ✅ Full training CRUD with exercise and client assignment (33 passing tests)
 
 ---
 
@@ -322,6 +605,7 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 - [ ] Create `DuplicateTrainingAction` (Filament action)
   - Form:
     - Target dates (date picker with multiple selection OR pattern selector)
+      - Find best option to multiplicate trainig to next time periods, eg. replicate this training to every monday for next 4 weeks, or select specific dates from date picker calendar
     - Assign to (select clients, default to original clients)
     - Copy exercises (checkbox, default true)
   - Logic:
@@ -336,6 +620,10 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
   - Validate dates and users
   - Create trainings in chunks for performance
   - Return count of created trainings
+- [ ] Training policy updates
+  - Only team coaches and admins can add trainings in certain team space
+  - Client can only view trainings in his team, on the other hand, can see all his personal trainings in his personal team space
+  - training owner can crud his own trainings, so client can crud his personal trainings in his personal team space
 - [ ] Add "Quick Schedule" button to TrainingResource table
   - Opens modal with date picker
   - Quick schedule to single date
@@ -391,6 +679,7 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
   - Filters: status, date range
   - Sort by scheduled_date
   - Actions: view details, mark complete
+  - Scoped by current team(tenant) and current user
 - [ ] Create `CompleteTrainingAction`
   - Form: feedback (textarea, optional), completed_at (auto-set to now)
   - Update training status to 'completed'
@@ -504,6 +793,9 @@ This document outlines the implementation roadmap for the Workouts App. Each mil
 
 ### Tasks
 
+- [ ] Replace deprecated Filament components
+  - replace form() with schema()
+  - mutateFormDataUsing() with mutateDataUsing()
 - [ ] Customize Filament theme
   - Brand colors
   - Logo and favicon
@@ -745,3 +1037,413 @@ docker-compose exec php php artisan config:clear
 ---
 
 **Next Steps**: Begin with Milestone 0 (Environment Setup) and proceed sequentially through each milestone.
+
+---
+---
+
+# PHASE 2: Performance Tracking & Advanced Features
+
+Phase 2 begins after Phase 1 (Milestones 0-16) is complete. This phase adds workout logging, progress tracking, and advanced features.
+
+---
+
+## Phase 2 Overview
+
+### Known Limitations After Phase 1
+
+1. **No Exercise Parameters**: Cannot specify sets, reps, weight, duration, rest time
+2. **No Progress Tracking**: No way to record actual performance vs planned
+3. **No Body Metrics**: Cannot track weight, measurements, body fat
+4. **No Workout Programs**: Cannot group trainings into multi-week programs
+5. **No Personal Records**: No PR tracking for motivation
+6. **No Exercise Grouping**: Cannot create supersets or circuits
+7. **No Communication**: Limited to feedback field, no coach-client messaging
+8. **No Goals**: Cannot set and track fitness goals
+
+---
+
+## Phase 2 Requirements
+
+### Non-Technical Requirements
+
+#### User Stories - Client
+- As a client, I want to **see my prescribed sets/reps/weight** for each exercise
+- As a client, I want to **log my actual performance** (sets completed, weight used)
+- As a client, I want to **track my body weight** over time
+- As a client, I want to **see my personal records** for motivation
+- As a client, I want to **view my training history** and progress
+- As a client, I want to **receive reminders** for upcoming trainings
+- As a client, I want to **communicate with my coach** about trainings
+
+#### User Stories - Coach
+- As a coach, I want to **prescribe specific sets/reps/weight** per exercise per client
+- As a coach, I want to **see client workout logs** to track adherence
+- As a coach, I want to **create training templates** for reuse
+- As a coach, I want to **build multi-week programs** with progressive overload
+- As a coach, I want to **track client body metrics** over time
+- As a coach, I want to **see which clients completed trainings** with their performance data
+- As a coach, I want to **receive notifications** when clients complete workouts
+
+#### User Stories - Admin
+- As an admin, I want to **see team-wide statistics** (completion rates, active clients)
+- As an admin, I want to **manage team settings and branding**
+
+---
+
+### Technical Requirements
+
+#### Performance
+- Calendar view loads < 2 seconds with 500+ trainings
+- Workout log saves in < 1 second
+- Progress charts render with 1 year of data
+
+#### Data Integrity
+- All performance data persisted (no data loss)
+- Audit trail for training changes
+- Proper soft deletes for exercises/trainings used in historical data
+
+#### Scalability
+- Support 100+ clients per team
+- Support 50+ trainings per client per month
+- Support 10+ exercises per training
+
+---
+
+## Phase 2 Implementation Priority
+
+### Phase 2A - Performance Tracking (HIGH VALUE)
+The biggest missing piece - users need to log their workouts.
+
+| Table | Priority | Value |
+|-------|----------|-------|
+| workout_logs | HIGH | Core feature - log actual performance |
+| personal_records | HIGH | Motivation, auto-tracked from logs |
+| body_metrics | MEDIUM | Common feature in fitness apps |
+
+### Phase 2B - Templates & Programs (MEDIUM VALUE)
+Makes the app more efficient for coaches.
+
+| Table | Priority | Value |
+|-------|----------|-------|
+| training_templates | MEDIUM | Speeds up training creation |
+| programs | LOW | Multi-week programs (complex) |
+| program_weeks | LOW | Part of programs |
+| program_week_template | LOW | Part of programs |
+| program_enrollments | LOW | Part of programs |
+
+### Phase 2C - Engagement Features (LOWER VALUE)
+Nice to have, not critical for MVP.
+
+| Table | Priority | Value |
+|-------|----------|-------|
+| goals | LOW | Goal tracking |
+| messages | LOW | Coach-client communication |
+
+---
+
+## Phase 2 New Enums
+
+```php
+// app/Enums/ExerciseCategory.php
+enum ExerciseCategory: string {
+    case Strength = 'strength';
+    case Cardio = 'cardio';
+    case Flexibility = 'flexibility';
+    case Balance = 'balance';
+    case Plyometric = 'plyometric';
+    case Compound = 'compound';
+    case Isolation = 'isolation';
+}
+
+// app/Enums/MuscleGroup.php
+enum MuscleGroup: string {
+    case Chest = 'chest';
+    case Back = 'back';
+    case Shoulders = 'shoulders';
+    case Biceps = 'biceps';
+    case Triceps = 'triceps';
+    case Forearms = 'forearms';
+    case Core = 'core';
+    case Glutes = 'glutes';
+    case Quadriceps = 'quadriceps';
+    case Hamstrings = 'hamstrings';
+    case Calves = 'calves';
+    case FullBody = 'full_body';
+}
+
+// app/Enums/SetType.php
+enum SetType: string {
+    case Normal = 'normal';
+    case Warmup = 'warmup';
+    case Dropset = 'dropset';
+    case Superset = 'superset';
+    case Giant = 'giant';
+    case AMRAP = 'amrap';
+    case RIR = 'rir';
+}
+
+// app/Enums/WeightUnit.php
+enum WeightUnit: string {
+    case Kg = 'kg';
+    case Lb = 'lb';
+}
+
+// app/Enums/GoalStatus.php
+enum GoalStatus: string {
+    case Active = 'active';
+    case Achieved = 'achieved';
+    case Abandoned = 'abandoned';
+}
+```
+
+---
+
+## Phase 2 Database Schema
+
+### Enhanced Tables (migrations to modify existing)
+
+#### Enhance `training_exercise` pivot
+```php
+// Add prescribed parameters
+$table->unsignedTinyInteger('prescribed_sets')->nullable();
+$table->unsignedTinyInteger('prescribed_reps')->nullable();
+$table->decimal('prescribed_weight', 8, 2)->nullable();
+$table->unsignedSmallInteger('prescribed_duration_seconds')->nullable();
+$table->unsignedSmallInteger('prescribed_rest_seconds')->nullable();
+$table->string('set_type')->default(SetType::Normal->value);
+$table->unsignedTinyInteger('superset_group')->nullable();
+```
+
+#### Enhance `training_user` pivot
+```php
+// Add completion tracking
+$table->timestamp('started_at')->nullable();
+$table->unsignedSmallInteger('duration_minutes')->nullable();
+$table->unsignedTinyInteger('perceived_effort')->nullable(); // RPE 1-10
+$table->text('coach_notes')->nullable();
+```
+
+### New Tables
+
+#### `workout_logs` - Performance Tracking
+```php
+Schema::create('workout_logs', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('training_user_id')->constrained('training_user')->cascadeOnDelete();
+    $table->foreignId('training_exercise_id')->constrained('training_exercise')->cascadeOnDelete();
+    $table->unsignedTinyInteger('set_number');
+    $table->unsignedTinyInteger('reps_completed')->nullable();
+    $table->decimal('weight_used', 8, 2)->nullable();
+    $table->unsignedSmallInteger('duration_seconds')->nullable();
+    $table->unsignedSmallInteger('rest_taken_seconds')->nullable();
+    $table->string('set_type')->default(SetType::Normal->value);
+    $table->boolean('completed')->default(true);
+    $table->text('notes')->nullable();
+    $table->timestamps();
+
+    $table->index(['training_user_id', 'training_exercise_id']);
+});
+```
+
+#### `personal_records` - PR Tracking
+```php
+Schema::create('personal_records', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('exercise_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->string('record_type'); // '1rm', '5rm', 'max_reps', 'max_duration'
+    $table->decimal('value', 10, 2);
+    $table->date('achieved_at');
+    $table->foreignId('workout_log_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamps();
+
+    $table->unique(['user_id', 'exercise_id', 'record_type']);
+    $table->index(['user_id', 'team_id']);
+});
+```
+
+#### `body_metrics` - Body Tracking
+```php
+Schema::create('body_metrics', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->date('measured_at');
+    $table->decimal('weight', 5, 2)->nullable();
+    $table->decimal('body_fat_percentage', 4, 1)->nullable();
+    $table->decimal('chest_cm', 5, 1)->nullable();
+    $table->decimal('waist_cm', 5, 1)->nullable();
+    $table->decimal('hips_cm', 5, 1)->nullable();
+    $table->decimal('bicep_left_cm', 5, 1)->nullable();
+    $table->decimal('bicep_right_cm', 5, 1)->nullable();
+    $table->decimal('thigh_left_cm', 5, 1)->nullable();
+    $table->decimal('thigh_right_cm', 5, 1)->nullable();
+    $table->text('notes')->nullable();
+    $table->timestamps();
+
+    $table->index(['user_id', 'team_id', 'measured_at']);
+});
+```
+
+#### `training_templates` - Reusable Templates
+```php
+Schema::create('training_templates', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->text('description')->nullable();
+    $table->string('category')->nullable();
+    $table->json('exercises'); // Snapshot of exercises with parameters
+    $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->index(['team_id', 'category']);
+});
+```
+
+#### `programs` - Multi-Week Programs
+```php
+Schema::create('programs', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->text('description')->nullable();
+    $table->unsignedTinyInteger('duration_weeks');
+    $table->unsignedTinyInteger('sessions_per_week');
+    $table->string('difficulty')->nullable();
+    $table->json('settings')->nullable();
+    $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+    $table->boolean('is_published')->default(false);
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->index(['team_id', 'is_published']);
+});
+```
+
+#### `program_weeks` - Program Structure
+```php
+Schema::create('program_weeks', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('program_id')->constrained()->cascadeOnDelete();
+    $table->unsignedTinyInteger('week_number');
+    $table->string('name')->nullable();
+    $table->text('notes')->nullable();
+    $table->timestamps();
+
+    $table->unique(['program_id', 'week_number']);
+});
+```
+
+#### `program_week_template` - Templates per Week
+```php
+Schema::create('program_week_template', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('program_week_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('training_template_id')->constrained()->cascadeOnDelete();
+    $table->unsignedTinyInteger('day_of_week');
+    $table->unsignedTinyInteger('sort_order')->default(0);
+    $table->timestamps();
+
+    $table->index(['program_week_id', 'day_of_week']);
+});
+```
+
+#### `program_enrollments` - Client Enrollments
+```php
+Schema::create('program_enrollments', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('program_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->date('start_date');
+    $table->date('end_date')->nullable();
+    $table->unsignedTinyInteger('current_week')->default(1);
+    $table->string('status')->default('active');
+    $table->timestamps();
+
+    $table->unique(['program_id', 'user_id', 'start_date']);
+    $table->index(['user_id', 'status']);
+});
+```
+
+#### `goals` - Fitness Goals
+```php
+Schema::create('goals', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->string('title');
+    $table->text('description')->nullable();
+    $table->string('goal_type');
+    $table->decimal('target_value', 10, 2)->nullable();
+    $table->decimal('starting_value', 10, 2)->nullable();
+    $table->decimal('current_value', 10, 2)->nullable();
+    $table->string('unit')->nullable();
+    $table->date('target_date')->nullable();
+    $table->string('status')->default(GoalStatus::Active->value);
+    $table->timestamp('achieved_at')->nullable();
+    $table->foreignId('exercise_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamps();
+
+    $table->index(['user_id', 'team_id', 'status']);
+});
+```
+
+#### `messages` - Coach-Client Communication
+```php
+Schema::create('messages', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
+    $table->foreignId('recipient_id')->constrained('users')->cascadeOnDelete();
+    $table->foreignId('training_id')->nullable()->constrained()->nullOnDelete();
+    $table->text('content');
+    $table->timestamp('read_at')->nullable();
+    $table->timestamps();
+
+    $table->index(['team_id', 'recipient_id', 'read_at']);
+    $table->index(['training_id']);
+});
+```
+
+---
+
+## Phase 2 Key Decisions
+
+Before starting Phase 2, decide:
+
+1. **Weight Units**: Support both kg and lb? Per-team setting?
+2. **Exercise Categories**: Use predefined enum or freeform tags?
+3. **Workout Logging UI**: Log during workout or after? Mobile-first?
+4. **PR Notifications**: Auto-detect and celebrate PRs?
+
+---
+
+## Phase 2 Sample Data Flows
+
+### Client Completes Workout
+```
+1. Client opens assigned training (training_user record exists)
+2. Client sees exercises with prescribed sets/reps/weight (training_exercise)
+3. For each exercise, client logs actual performance (workout_logs)
+   - Set 1: 10 reps @ 50kg
+   - Set 2: 8 reps @ 55kg
+   - Set 3: 6 reps @ 60kg (PR!)
+4. System auto-checks for PR (personal_records)
+5. Client marks training complete with feedback (training_user.completed_at, feedback)
+6. Coach sees completion and can add coach_notes
+```
+
+### Coach Creates Training with Parameters
+```
+1. Coach creates new training
+2. Coach adds exercises with prescribed parameters:
+   - Bench Press: 3 sets x 8 reps @ 70% 1RM, 90s rest
+   - Rows: 3 sets x 10 reps, 60s rest
+   - Shoulder Press: 3 sets x 12 reps, superset with...
+   - Lateral Raises: 3 sets x 15 reps (same superset_group)
+3. Coach assigns to clients
+4. System schedules for selected date
+```

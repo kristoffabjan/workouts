@@ -39,8 +39,9 @@ class Exercise extends Model
 
     public function trainings(): BelongsToMany
     {
-        return $this->belongsToMany(Training::class)
-            ->withPivot('notes', 'sort_order')
+        return $this->belongsToMany(Training::class, 'exercise_training')
+            ->using(TrainingExercise::class)
+            ->withPivot('id', 'notes', 'sort_order')
             ->withTimestamps();
     }
 

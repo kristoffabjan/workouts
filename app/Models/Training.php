@@ -21,7 +21,7 @@ class Training extends Model
         'title',
         'content',
         'status',
-        'scheduled_date',
+        'scheduled_at',
         'created_by',
     ];
 
@@ -29,7 +29,7 @@ class Training extends Model
     {
         return [
             'status' => TrainingStatus::class,
-            'scheduled_date' => 'date',
+            'scheduled_at' => 'datetime',
         ];
     }
 
@@ -40,16 +40,18 @@ class Training extends Model
 
     public function exercises(): BelongsToMany
     {
-        return $this->belongsToMany(Exercise::class)
-            ->withPivot('notes', 'sort_order')
+        return $this->belongsToMany(Exercise::class, 'exercise_training')
+            ->using(TrainingExercise::class)
+            ->withPivot('id', 'notes', 'sort_order')
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }
 
     public function assignedUsers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot('completed_at', 'feedback')
+        return $this->belongsToMany(User::class, 'training_user')
+            ->using(TrainingUser::class)
+            ->withPivot('id', 'completed_at', 'feedback')
             ->withTimestamps();
     }
 

@@ -85,8 +85,9 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function assignedTrainings(): BelongsToMany
     {
-        return $this->belongsToMany(Training::class)
-            ->withPivot('completed_at', 'feedback')
+        return $this->belongsToMany(Training::class, 'training_user')
+            ->using(TrainingUser::class)
+            ->withPivot('id', 'completed_at', 'feedback')
             ->withTimestamps();
     }
 

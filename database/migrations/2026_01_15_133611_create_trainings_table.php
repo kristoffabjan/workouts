@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('title');
             $table->longText('content')->nullable();
             $table->string('status')->default(TrainingStatus::Draft->value);
-            $table->date('scheduled_date')->nullable();
+            $table->dateTime('scheduled_at')->nullable();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
