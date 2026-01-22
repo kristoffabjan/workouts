@@ -4,10 +4,11 @@ namespace App\Filament\App\Resources\Trainings\Tables;
 
 use App\Enums\TeamRole;
 use App\Enums\TrainingStatus;
+use App\Filament\App\Resources\Trainings\Actions\ScheduleTrainingAction;
 use App\Filament\App\Resources\Trainings\TrainingResource;
 use App\Models\Training;
 use App\Models\User;
-use Filament\Actions\BulkActionGroup;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -34,17 +35,6 @@ class TrainingsTable
                 TextColumn::make('scheduled_at')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('creator.name')
-                    ->label('Created By')
-                    ->sortable(),
-                TextColumn::make('assigned_users_count')
-                    ->counts('assignedUsers')
-                    ->label('Assigned')
-                    ->sortable(),
-                TextColumn::make('exercises_count')
-                    ->counts('exercises')
-                    ->label('Exercises')
-                    ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -54,7 +44,7 @@ class TrainingsTable
                 SelectFilter::make('status')
                     ->options(TrainingStatus::class),
                 Filter::make('scheduled_at')
-                    ->form([
+                    ->schema([
                         \Filament\Forms\Components\DatePicker::make('scheduled_from')
                             ->label('From'),
                         \Filament\Forms\Components\DatePicker::make('scheduled_until')
@@ -64,22 +54,22 @@ class TrainingsTable
                         return $query
                             ->when(
                                 $data['scheduled_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
                             )
                             ->when(
                                 $data['scheduled_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
 
                         if ($data['scheduled_from'] ?? null) {
-                            $indicators['scheduled_from'] = 'From '.\Carbon\Carbon::parse($data['scheduled_from'])->toFormattedDateString();
+                            $indicators['scheduled_from'] = 'From ' . \Carbon\Carbon::parse($data['scheduled_from'])->toFormattedDateString();
                         }
 
                         if ($data['scheduled_until'] ?? null) {
-                            $indicators['scheduled_until'] = 'Until '.\Carbon\Carbon::parse($data['scheduled_until'])->toFormattedDateString();
+                            $indicators['scheduled_until'] = 'Until ' . \Carbon\Carbon::parse($data['scheduled_until'])->toFormattedDateString();
                         }
 
                         return $indicators;
@@ -110,14 +100,15 @@ class TrainingsTable
                     ->preload(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ScheduleTrainingAction::makeTableAction(),
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                DeleteBulkAction::make(),
             ])
             ->recordUrl(function (Training $record): string {
                 $team = Filament::getTenant();

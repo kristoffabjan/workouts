@@ -509,7 +509,6 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 **Deliverable**: ✅ Global exercise library with copy-to-team functionality (41 passing tests)
 
 ---
-
 ## Milestone 6: Training Management ✅
 
 **Goal**: Create and manage trainings with exercise attachments.
@@ -593,43 +592,63 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 7: Training Scheduling & Duplication
+
+## Milestone 6.5: Coach has clients/athletes overview ✅
+
+**Goal**: In coach panel, Team members resource, when clicking on user(client/athlete), show overview of his assigned trainings with status, to see users history and future trainings.
+### Tasks
+- [x] In App panel, in Team members resource, create relation manager "Assigned Trainings" for user(client/athlete)
+  - Table columns: title, status, scheduled_at, exercises (count), created_at
+  - Filters: by status, by date range
+  - Actions: view training (navigate to TrainingResource view page)
+- [x] Ensure only coaches can see this relation manager
+- [x] Test: Coach views client assigned trainings, verifies data (10 passing tests)
+
+**Deliverable**: ✅ Coaches can view client assigned trainings history via ViewUser page with relation manager
+
+
+---
+
+## Milestone 6.6: Queue setup & Background Jobs ✅
+**Goal**: Configure Laravel queue with Redis and Horizon for background job processing.
+### Tasks
+- [x] Configure `.env` for Redis queue (QUEUE_CONNECTION=redis)
+- [x] Install Laravel Horizon (`composer require laravel/horizon`)
+- [x] Run `php artisan horizon:install` to publish assets and config
+- [x] Configure `config/horizon.php` for Redis queue
+- [x] Configure Horizon access gate for system admins in `HorizonServiceProvider`
+- [x] Set up separate Horizon Docker container (cleaner than supervisor in PHP container)
+  - Added `horizon` service to docker-compose.yml
+  - Uses same PHP image with `php artisan horizon` command
+  - Depends on php, redis, and mysql services
+
+## Milestone 7: Training Scheduling & Duplication ✅
 
 **Goal**: Implement single and bulk training scheduling.
 
 ### Tasks
 
-- [ ] Create `ScheduleTrainingAction` (Filament action)
-  - Form: scheduled_date, assign_to (select clients)
-  - Logic: update training status to 'scheduled', set date, assign to clients
-- [ ] Create `DuplicateTrainingAction` (Filament action)
-  - Form:
-    - Target dates (date picker with multiple selection OR pattern selector)
-      - Find best option to multiplicate trainig to next time periods, eg. replicate this training to every monday for next 4 weeks, or select specific dates from date picker calendar
-    - Assign to (select clients, default to original clients)
-    - Copy exercises (checkbox, default true)
-  - Logic:
-    - Create training copies for each selected date
-    - Copy exercises with notes if enabled
-    - Assign to selected clients
-    - Set status to 'scheduled'
-    - Use database transaction
-  - Notification: Show count of created trainings
-- [ ] Create `BulkScheduleService` (app/Services/)
-  - Method: `duplicateToMultipleDates(Training $training, array $dates, array $userIds)`
-  - Validate dates and users
-  - Create trainings in chunks for performance
-  - Return count of created trainings
-- [ ] Training policy updates
-  - Only team coaches and admins can add trainings in certain team space
-  - Client can only view trainings in his team, on the other hand, can see all his personal trainings in his personal team space
-  - training owner can crud his own trainings, so client can crud his personal trainings in his personal team space
-- [ ] Add "Quick Schedule" button to TrainingResource table
-  - Opens modal with date picker
-  - Quick schedule to single date
-- [ ] Test: Duplicate training to 20 dates, verify all created correctly
+- [x] Create `BulkScheduleService` (app/Services/)
+  - Method: `scheduleTraining()` - schedule single training with optional client assignment
+  - Method: `duplicateTraining()` - duplicate training to new date with exercises
+  - Method: `duplicateToMultipleDates()` - bulk duplicate with transaction support
+  - Method: `generateWeeklyDates()` - generate dates for weekly patterns
+- [x] Create unified `ScheduleTrainingAction` (Filament action)
+  - Merged schedule and duplicate functionality into single action
+  - Form with tabs: Single Date, Multiple Dates (repeater), Weekly Pattern (weeks + days)
+  - Options section: copy_exercises toggle, assign_to multi-select
+  - Single date mode updates existing training
+  - Multiple dates mode duplicates training
+  - Shows appropriate notifications
+- [x] Cleaned up TrainingsTable
+  - Removed columns: Created By, Assigned (count), Exercises (count)
+  - Kept columns: Title, Status, Scheduled At, Created At (hidden by default)
+  - Row actions: Schedule, View, Edit, Delete
+- [x] Tests: 59 passing tests
+  - BulkScheduleServiceTest (13 tests): scheduleTraining, duplicateTraining, duplicateToMultipleDates, generateWeeklyDates
+  - TrainingResourceTest (46 tests): scheduling action with single/multiple dates, access control
 
-**Deliverable**: Single and bulk training scheduling functionality
+**Deliverable**: ✅ Single and bulk training scheduling functionality with separate Horizon container
 
 ---
 

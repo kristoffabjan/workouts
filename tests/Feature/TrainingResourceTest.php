@@ -5,6 +5,7 @@ use App\Filament\App\Resources\Trainings\Pages\CreateTraining;
 use App\Filament\App\Resources\Trainings\Pages\EditTraining;
 use App\Filament\App\Resources\Trainings\Pages\ListTrainings;
 use App\Filament\App\Resources\Trainings\Pages\ViewTraining;
+use App\Models\Exercise;
 use App\Models\Team;
 use App\Models\Training;
 use App\Models\User;
@@ -528,5 +529,143 @@ describe('Training mark as complete', function () {
 
         Livewire::test(ViewTraining::class, ['record' => $training->getRouteKey()])
             ->assertActionHidden('editFeedback');
+    });
+});
+
+describe('Training schedule action', function () {
+    it('allows coach to schedule a draft training with single date', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->draft()
+            ->create();
+
+        $scheduledAt = now()->addDays(3)->setHour(10)->setMinute(0);
+
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->callTableAction('schedule', $training, [
+                'single_date' => $scheduledAt,
+            ]);
+
+        expect($training->refresh())
+            ->status->toBe(TrainingStatus::Scheduled)
+            ->scheduled_at->format('Y-m-d H:i')->toBe($scheduledAt->format('Y-m-d H:i'));
+    });
+
+    it('allows coach to schedule and assign to clients', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->draft()
+            ->create();
+
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->callTableAction('schedule', $training, [
+                'single_date' => now()->addDay(),
+                'assign_to' => [$this->client->id],
+            ]);
+
+        expect($training->assignedUsers()->count())->toBe(1)
+            ->and($training->assignedUsers()->first()->id)->toBe($this->client->id);
+    });
+
+    it('allows coach to duplicate training using weekly pattern', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->create(['title' => 'Original Training']);
+
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->callTableAction('schedule', $training, [
+                'start_date' => now()->addDay(),
+                'weeks' => 2,
+                'copy_exercises' => true,
+            ]);
+
+        expect(Training::where('team_id', $this->team->id)->count())->toBe(3);
+
+        $duplicates = Training::where('team_id', $this->team->id)
+            ->where('id', '!=', $training->id)
+            ->get();
+
+        foreach ($duplicates as $duplicate) {
+            expect($duplicate->title)->toBe('Original Training')
+                ->and($duplicate->status)->toBe(TrainingStatus::Scheduled);
+        }
+    });
+
+    it('copies exercises when duplicating', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->create();
+
+        $exercise = Exercise::factory()->create(['team_id' => $this->team->id]);
+        $training->exercises()->attach($exercise->id, ['notes' => 'Test notes', 'sort_order' => 1]);
+
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->callTableAction('schedule', $training, [
+                'start_date' => now()->addDay(),
+                'weeks' => 1,
+                'copy_exercises' => true,
+            ]);
+
+        $duplicate = Training::where('team_id', $this->team->id)
+            ->where('id', '!=', $training->id)
+            ->first();
+
+        expect($duplicate->exercises()->count())->toBe(1)
+            ->and($duplicate->exercises()->first()->pivot->notes)->toBe('Test notes');
+    });
+
+    it('assigns to specified clients when duplicating', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->create();
+
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->callTableAction('schedule', $training, [
+                'start_date' => now()->addDay(),
+                'weeks' => 1,
+                'assign_to' => [$this->client->id],
+                'copy_exercises' => true,
+            ]);
+
+        $duplicate = Training::where('team_id', $this->team->id)
+            ->where('id', '!=', $training->id)
+            ->first();
+
+        expect($duplicate->assignedUsers()->count())->toBe(1)
+            ->and($duplicate->assignedUsers()->first()->id)->toBe($this->client->id);
+    });
+
+    it('hides schedule action for client', function () {
+        $training = Training::factory()
+            ->forTeam($this->team)
+            ->createdBy($this->coach)
+            ->assignedTo($this->client)
+            ->create();
+
+        $this->actingAs($this->client);
+        Filament::setTenant($this->team);
+
+        Livewire::test(ListTrainings::class)
+            ->assertTableActionHidden('schedule', $training);
     });
 });
