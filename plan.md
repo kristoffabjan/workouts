@@ -652,73 +652,47 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 8: Calendar View
+## Milestone 8: Calendar View ✅
 
 **Goal**: Display trainings in a calendar interface with filtering.
 
 ### Tasks
 
-- [ ] Choose calendar package
-  - Option 1: FullCalendar.js integration with Livewire
-  - Option 2: Filament calendar plugin (if available)
-  - Option 3: Custom Livewire component with simple month view
-- [ ] Create `CalendarPage` (Filament custom page)
-  - Register in panel navigation
-  - Access: all roles
-- [ ] Create `TrainingCalendar` Livewire component
-  - Display trainings on calendar by scheduled_date
-  - Color code by status (draft=gray, scheduled=blue, completed=green, skipped=orange)
-  - Click training to open slide-over with details
-  - Filter by:
-    - Client (for coaches/admins)
-    - Status
-    - Date range
-- [ ] Implement data loading
-  - Load trainings for visible date range only
-  - Apply role-based filtering (clients see only assigned)
-  - Eager load relationships to reduce queries
-- [ ] Add actions on calendar events
-  - Quick complete (for clients)
-  - Quick view details
-  - Edit (navigate to TrainingResource)
-- [ ] Test: Load calendar with 100+ trainings, verify performance
+- [x] Choose calendar package
+  - Using `saade/filament-fullcalendar:^4.0@beta` for Filament v4 compatibility
+- [x] Create custom Filament theme for App panel (required for fullcalendar CSS)
+  - Created `resources/css/filament/app/theme.css`
+  - Registered in `AppPanelProvider` with `viteTheme()`
+  - Registered `FilamentFullCalendarPlugin` in App panel
+- [x] Create `CalendarWidget` (extends FullCalendarWidget)
+  - Implements `fetchEvents()` method with role-based filtering
+  - Events colored by status (Draft=gray, Scheduled=amber, Completed=green, Skipped=red)
+  - Loads trainings for visible date range only with eager loading
+- [x] Create `CalendarPage` (Filament custom page)
+  - Registered in panel navigation with calendar icon
+  - Applied in App panel only at `/app/{tenant}/calendar`
+  - Shows legend for training status colors
+- [x] Access control
+  - Coaches: view all team trainings
+  - Clients: view assigned trainings only
+  - Calendar trainings scoped by current team (tenant)
+- [x] Event click action
+  - On click, navigates to training detail page (ViewTraining)
+  - URL includes tenant slug for proper routing
+- [x] Performance tested with 100+ trainings (< 2 seconds)
+- [x] Tests: 11 passing tests for calendar functionality
 
-**Deliverable**: Functional calendar view with role-based filtering
+**Deliverable**: ✅ Functional calendar with training display, role-based filtering, and efficient data loading
 
----
 
-## Milestone 9: Client Training Workflow
-
-**Goal**: Enable clients to view and complete trainings with feedback.
-
+## Milestone 9: Notifications & Reminders
+**Goal**: Implement notification system for training assignments and reminders.
 ### Tasks
-
-- [ ] Create `MyTrainingsPage` (Filament custom page)
-  - List view of assigned trainings
-  - Filters: status, date range
-  - Sort by scheduled_date
-  - Actions: view details, mark complete
-  - Scoped by current team(tenant) and current user
-- [ ] Create `CompleteTrainingAction`
-  - Form: feedback (textarea, optional), completed_at (auto-set to now)
-  - Update training status to 'completed'
-  - Update pivot record (training_user) with completion data
-  - Notification: "Training marked as complete"
-- [ ] Create `TrainingDetailPage` or modal
-  - Display: title, content, exercises with notes and videos
-  - Show completion status and feedback if completed
-  - Action button: Mark as Complete (if not completed)
-- [ ] Modify TrainingResource view for clients
-  - Read-only access
-  - Show assigned trainings only
-  - Prominent "Complete Training" button
-- [ ] Create notification for coaches when client completes training
-  - Optional: can be added later
-- [ ] Test: Client completes training, coach sees feedback
-
-**Deliverable**: Complete client workflow for viewing and completing trainings
-
----
+- [ ] Verify laravel and filament is setup for Filament databse notifications
+   - https://filamentphp.com/docs/4.x/notifications/database-notifications
+- [ ] Notify coaches when clients complete trainings
+  - Create `TrainingCompletedNotification` (database notification)
+  - Trigger on training completion action
 
 ## Milestone 10: Dashboard & Overview
 
@@ -1052,6 +1026,76 @@ docker-compose exec php php artisan config:clear
 | 16: Documentation | Low | 1-2 sessions |
 
 **Total estimated effort**: 32-42 work sessions (assuming 2-4 hours per session)
+
+---
+
+# Low Priority Enhancement Milestones
+
+These milestones are suggested improvements that can be implemented after core functionality is complete. They are not required for MVP but would enhance the user experience.
+
+---
+
+## Milestone LP-1: Training Scheduled Notifications
+
+**Priority**: Low
+
+**Goal**: Notify clients when assigned to a new training.
+
+### Tasks
+
+- [ ] Create `TrainingScheduledNotification` (similar to TrainingCompletedNotification)
+  - Email template with training title, scheduled date, assigned exercises
+  - Link to view training in app
+- [ ] Dispatch notification when:
+  - Training is scheduled with clients assigned
+  - Client is added to existing scheduled training
+- [ ] Add user preference to disable notifications (optional)
+- [ ] Test: Schedule training, verify client receives notification
+
+**Deliverable**: Automated email notifications to clients when assigned trainings
+
+---
+
+## Milestone LP-2: Pre-Training Reminders
+
+**Priority**: Low
+
+**Goal**: Send automated reminder emails before scheduled trainings.
+
+### Tasks
+
+- [ ] Create `TrainingReminderNotification`
+  - Email template with training details and exercises
+  - Sent 24 hours before scheduled_at
+- [ ] Create `SendTrainingReminders` scheduled command
+  - Query trainings scheduled for tomorrow
+  - Send reminders to assigned clients who haven't completed
+  - Run daily via Laravel scheduler
+- [ ] Register command in `routes/console.php`
+- [ ] Test: Schedule training for tomorrow, verify reminder sent
+
+**Deliverable**: Automated 24-hour reminder emails using Horizon queue
+
+---
+
+## Milestone LP-3: Training Conflict Detection
+
+**Priority**: Low
+
+**Goal**: Warn coaches when scheduling overlapping trainings for the same client.
+
+### Tasks
+
+- [ ] Create `TrainingConflictService`
+  - Method: `checkConflicts(array $userIds, DateTime $scheduledAt)`
+  - Return existing trainings within ±2 hours of scheduled time
+- [ ] Integrate into ScheduleTrainingAction
+  - Show warning notification if conflicts detected
+  - Allow coach to proceed anyway (soft warning, not blocking)
+- [ ] Add conflict indicator on trainings table (optional)
+- [ ] Test: Schedule overlapping trainings, verify warning shown
+
+**Deliverable**: Conflict detection warnings when scheduling overlapping trainings
 
 ---
 

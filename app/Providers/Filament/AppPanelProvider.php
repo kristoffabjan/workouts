@@ -21,6 +21,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -67,6 +68,14 @@ class AppPanelProvider extends PanelProvider
                     ->label('Register new team')
                     ->icon('heroicon-o-plus-circle')
                     ->url(fn (): string => route('filament.app.tenant.registration')),
-            ]);
+            ])
+            ->viteTheme('resources/css/filament/app/theme.css')
+            ->plugin(
+                FilamentFullCalendarPlugin::make()
+                    ->selectable(false)
+                    ->editable(false)
+                    ->timezone(config('app.timezone'))
+                    ->locale(config('app.locale'))
+            );
     }
 }
