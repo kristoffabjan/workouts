@@ -4,6 +4,8 @@ namespace App\Filament\App\Resources\Users;
 
 use App\Filament\App\Resources\Users\Pages\EditUser;
 use App\Filament\App\Resources\Users\Pages\ListUsers;
+use App\Filament\App\Resources\Users\Pages\ViewUser;
+use App\Filament\App\Resources\Users\RelationManagers\AssignedTrainingsRelationManager;
 use App\Filament\App\Resources\Users\Schemas\UserForm;
 use App\Filament\App\Resources\Users\Tables\UsersTable;
 use App\Models\User;
@@ -48,7 +50,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AssignedTrainingsRelationManager::class,
         ];
     }
 
@@ -56,6 +58,7 @@ class UserResource extends Resource
     {
         return [
             'index' => ListUsers::route('/'),
+            'view' => ViewUser::route('/{record}'),
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }

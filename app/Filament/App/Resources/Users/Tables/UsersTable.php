@@ -6,6 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -68,6 +69,7 @@ class UsersTable
                     }),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 Action::make('remove')
                     ->label('Remove')
