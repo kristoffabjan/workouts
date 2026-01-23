@@ -2,12 +2,32 @@
 
 namespace App\Services;
 
+use App\Enums\TeamRole;
 use App\Enums\TrainingStatus;
+use App\Models\Team;
 use App\Models\Training;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class BulkScheduleService
 {
+    public function validateTeamMembership(array $userIds, ?Team $team): array
+    {
+        if (empty($userIds) || ! $team) {
+            return [];
+        }
+
+        $validUserIds = User::whereIn('id', $userIds)
+            ->whereHas('teams', function ($query) use ($team) {
+                $query->where('team_id', $team->id)
+                    ->where('role', TeamRole::Client->value);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        return array_intersect($userIds, $validUserIds);
+    }
+
     public function duplicateToMultipleDates(
         Training $training,
         array $dates,
@@ -17,11 +37,15 @@ class BulkScheduleService
         $createdCount = 0;
 
         DB::transaction(function () use ($training, $dates, $userIds, $copyExercises, &$createdCount) {
+            $validUserIds = ! empty($userIds)
+                ? $this->validateTeamMembership($userIds, $training->team)
+                : [];
+
             foreach ($dates as $date) {
                 $newTraining = $this->duplicateTraining($training, $date, $copyExercises);
 
-                if (! empty($userIds)) {
-                    $newTraining->assignedUsers()->attach($userIds);
+                if (! empty($validUserIds)) {
+                    $newTraining->assignedUsers()->attach($validUserIds);
                 } elseif ($training->assignedUsers()->exists()) {
                     $newTraining->assignedUsers()->attach(
                         $training->assignedUsers()->pluck('user_id')->toArray()
@@ -118,8 +142,9 @@ class BulkScheduleService
         $training->save();
 
         if (! empty($userIds)) {
+            $validUserIds = $this->validateTeamMembership($userIds, $training->team);
             $existingUserIds = $training->assignedUsers()->pluck('user_id')->toArray();
-            $newUserIds = array_diff($userIds, $existingUserIds);
+            $newUserIds = array_diff($validUserIds, $existingUserIds);
 
             if (! empty($newUserIds)) {
                 $training->assignedUsers()->attach($newUserIds);

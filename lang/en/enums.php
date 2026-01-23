@@ -11,5 +11,6 @@ return [
         'scheduled' => 'Scheduled',
         'completed' => 'Completed',
         'skipped' => 'Skipped',
+        'missed' => 'Missed',
     ],
 ];

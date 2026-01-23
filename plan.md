@@ -820,39 +820,64 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 12: Data Validation & Business Rules
+## Milestone 12: Data Validation & Business Rules ✅
 
 **Goal**: Implement validation rules and business logic constraints.
 
 ### Tasks
 
-- [ ] Athlete can't submit feedback for training more than 3 days after scheduled date.
-- [ ] Training is marked as missed if not marked as completed within 3 days after scheduled date.
-- [ ] Prevent scheduling training in the past.
-- [ ] Prevent assigning training to users not in the current team.
-- [ ] Prevent deleting exercises that are attached to existing trainings.
-- [ ] Prevent deleting users who have created trainings or exercises (require transfer of ownership or soft delete).
-- [ ] Add form validation rules
-  - Training: title required, scheduled_date in future for new trainings
-  - Exercise: name required, video_urls must be valid URLs
-  - User: email unique in system, role valid enum
-- [ ] Implement business rules
-  - Cannot delete exercise if attached to trainings
-  - Cannot delete user if they created trainings/exercises (transfer ownership or soft delete)
-  - Cannot assign training to user not in current team
-  - Cannot schedule training without date
-- [ ] Add database constraints
-  - Foreign key constraints with CASCADE/RESTRICT as appropriate
-  - Unique indexes where needed
-  - NOT NULL constraints on required fields
-- [ ] Create validation tests
-  - Test all validation rules
-  - Test business rule enforcement
-- [ ] Add user-friendly error messages
-  - Custom validation messages
-  - Graceful error handling in Filament
+- [x] Athlete can't submit feedback for training more than 3 days after scheduled date. Use days value from config/workouts.php
+  - Added `feedback_deadline_days` config (default 3)
+  - Added `isFeedbackDeadlinePassed()` method to ViewTraining page
+  - Mark as complete and edit feedback actions hidden after deadline
+- [x] Training is marked as missed if not marked as completed within 3 days after scheduled date. Use days value from config/workouts.php
+  - Added `missed_deadline_days` config (default 3)
+  - Added TrainingStatus::Missed enum case with red color
+  - Created `trainings:mark-missed` scheduled command (runs daily at 06:00)
+  - Added translations for "missed" status in EN and SL
+- [x] Prevent scheduling training without a date.
+  - TrainingForm now requires `scheduled_at` when status is "Scheduled"
+  - Custom validation rule added with live() reactive check
+- [x] Prevent scheduling training in the past.
+  - TrainingForm has `minDate(now())` and custom validation
+  - ScheduleTrainingAction validates dates before processing
+- [x] Prevent assigning training to users not in the current team.
+  - BulkScheduleService::validateTeamMembership() validates user IDs
+  - Only team clients with correct role can be assigned
+- [x] Prevent deleting exercises that are attached to existing trainings.
+  - ExercisePolicy::delete() checks `$exercise->trainings()->exists()`
+  - ExercisePolicy::forceDelete() has same check
+- [x] Prevent deleting users who have created trainings or exercises (require transfer of ownership or soft delete).
+  - UserPolicy::delete() checks `hasCreatedContent()` method
+  - UserPolicy::forceDelete() has same check
+  - Also prevents self-deletion
+- [x] Prevent coaches to edit training, when scheduled date is in the past. Prevent assigning new users or exercises in that case as well.
+  - TrainingPolicy::update() checks `isScheduledInPast()` (coaches only)
+  - AssignedUsersRelationManager hides attach/detach for past trainings
+  - ExercisesRelationManager hides attach/detach/edit/reorder for past trainings
+  - ScheduleTrainingAction hidden for past trainings
+- [x] Add form validation rules
+  - Exercise: name required, video_urls must be valid URLs (already implemented)
+  - TrainingForm: conditional required for scheduled_at
+- [x] Implement business rules
+  - Cannot delete exercise if attached to trainings (ExercisePolicy)
+  - Cannot delete user if they created trainings/exercises (UserPolicy)
+- [x] Create validation tests
+  - Created BusinessRulesValidationTest.php with 22 tests covering:
+    - Feedback deadline validation (3 tests)
+    - Mark missed trainings command (3 tests)
+    - Scheduling validation (2 tests)
+    - Exercise deletion validation (2 tests)
+    - User deletion validation (4 tests)
+    - Past training edit prevention (4 tests)
+    - Training status enum (2 tests)
+    - Config values (2 tests)
+- [x] Add user-friendly error messages
+  - Added validation messages in trainings.php (EN/SL)
+  - Added validation messages in exercises.php (EN/SL)
+  - Added validation messages in users.php (EN/SL)
 
-**Deliverable**: Robust validation and business rule enforcement
+**Deliverable**: ✅ Robust validation and business rule enforcement (22 new tests, 272 total tests passing)
 
 ---
 
@@ -1003,6 +1028,26 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 **Deliverable**: Documented, deployment-ready application
 
 ---
+
+## Milestone 17: App settings & Configuration 
+
+**Goal**: Implement application settings for customization.
+### Tasks
+- [ ] Install spatie settings package
+- [ ] Install https://filamentphp.com/plugins/filament-spatie-settings
+- [ ] Link settings to Filament app and admin panel - https://filamentphp.com/docs/4.x/navigation/user-menu
+    - Create AppSettings and AdminSettings pages
+- [ ] Create Application settings
+    - Scoped to admin panel only and admin user
+    - Settings: Application Name, Application Logo (image upload), Default Language (select), Timezone (select)
+- [ ] Create Team settings
+    - Scoped to app panel and per team
+    - Settings: Team Name, Team Logo (image upload), Default Training Reminder Time (timepicker)
+- [ ] Update application to use settings where applicable
+    - Application name/logo in headers
+    - Default language for new users
+    - Timezone for date/time displays
+- [ ] Tests: 15 passing tests for settings functionality
 
 ## Implementation Notes
 

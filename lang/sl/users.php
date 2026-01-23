@@ -46,4 +46,9 @@ return [
     'relation_manager' => [
         'assigned_trainings' => 'Dodeljeni treningi',
     ],
+
+    'validation' => [
+        'cannot_delete_with_content' => 'Tega uporabnika ni mogoče izbrisati, ker je ustvaril treninge ali vaje. Najprej prenesite lastništvo.',
+        'cannot_delete_self' => 'Ne morete izbrisati svojega računa.',
+    ],
 ];

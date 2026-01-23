@@ -153,6 +153,10 @@ class ViewTraining extends ViewRecord
             return false;
         }
 
+        if ($this->isFeedbackDeadlinePassed()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -165,10 +169,26 @@ class ViewTraining extends ViewRecord
             return false;
         }
 
+        if ($this->isFeedbackDeadlinePassed()) {
+            return false;
+        }
+
         return $this->record->assignedUsers()
             ->where('user_id', $user->id)
             ->whereNotNull('training_user.completed_at')
             ->exists();
+    }
+
+    protected function isFeedbackDeadlinePassed(): bool
+    {
+        if (! $this->record->scheduled_at) {
+            return false;
+        }
+
+        $deadlineDays = config('workouts.feedback_deadline_days', 3);
+        $deadline = $this->record->scheduled_at->copy()->addDays($deadlineDays)->endOfDay();
+
+        return now()->isAfter($deadline);
     }
 
     protected function markTrainingAsComplete(?string $feedback): void

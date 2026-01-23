@@ -33,7 +33,7 @@ class ExercisesRelationManager extends RelationManager
                     ->limit(50)
                     ->wrap(),
             ])
-            ->reorderable('sort_order')
+            ->reorderable(fn (): bool => ! $this->isScheduledInPast(), 'sort_order')
             ->afterReordering(function (array $order): void {
                 foreach ($order as $index => $recordKey) {
                     $this->getOwnerRecord()->exercises()->updateExistingPivot(
@@ -46,6 +46,7 @@ class ExercisesRelationManager extends RelationManager
             ->headerActions([
                 AttachAction::make()
                     ->preloadRecordSelect()
+                    ->visible(fn (): bool => ! $this->isScheduledInPast())
                     ->recordSelectOptionsQuery(function (Builder $query) {
                         $team = Filament::getTenant();
                         if ($team) {
@@ -71,6 +72,7 @@ class ExercisesRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make()
+                    ->visible(fn (): bool => ! $this->isScheduledInPast())
                     ->schema([
                         Textarea::make('notes')
                             ->rows(3),
@@ -86,12 +88,20 @@ class ExercisesRelationManager extends RelationManager
                             ['notes' => $data['notes']]
                         );
                     }),
-                DetachAction::make(),
+                DetachAction::make()
+                    ->visible(fn (): bool => ! $this->isScheduledInPast()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DetachBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected function isScheduledInPast(): bool
+    {
+        $ownerRecord = $this->getOwnerRecord();
+
+        return $ownerRecord->scheduled_at && $ownerRecord->scheduled_at->isPast();
     }
 }

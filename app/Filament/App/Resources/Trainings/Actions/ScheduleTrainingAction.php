@@ -114,7 +114,17 @@ class ScheduleTrainingAction
 
                 if (empty($dates)) {
                     Notification::make()
-                        ->title(__('app.messages.error'))
+                        ->title(__('trainings.validation.no_date_selected'))
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+
+                $pastDates = collect($dates)->filter(fn ($date) => now()->isAfter($date));
+                if ($pastDates->isNotEmpty()) {
+                    Notification::make()
+                        ->title(__('trainings.validation.scheduled_date_in_past'))
                         ->warning()
                         ->send();
 
@@ -155,11 +165,19 @@ class ScheduleTrainingAction
                     ->success()
                     ->send();
             })
-            ->visible(function () {
+            ->visible(function (?Training $record) {
                 $team = Filament::getTenant();
                 $user = auth()->user();
 
-                return $team && $user && $user->isCoach($team);
+                if (! $team || ! $user || ! $user->isCoach($team)) {
+                    return false;
+                }
+
+                if ($record?->scheduled_at?->isPast()) {
+                    return false;
+                }
+
+                return true;
             });
     }
 

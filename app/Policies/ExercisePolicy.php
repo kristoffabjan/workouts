@@ -52,6 +52,10 @@ class ExercisePolicy
 
     public function delete(User $user, Exercise $exercise): bool
     {
+        if ($exercise->trainings()->exists()) {
+            return false;
+        }
+
         if ($user->is_admin && $exercise->team_id === null) {
             return true;
         }
@@ -79,6 +83,10 @@ class ExercisePolicy
 
     public function forceDelete(User $user, Exercise $exercise): bool
     {
+        if ($exercise->trainings()->exists()) {
+            return false;
+        }
+
         return $this->delete($user, $exercise);
     }
 }

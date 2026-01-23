@@ -67,4 +67,9 @@ return [
         'endurance' => 'Endurance',
         'power' => 'Power',
     ],
+
+    'validation' => [
+        'cannot_delete_attached' => 'This exercise cannot be deleted because it is attached to one or more trainings.',
+        'invalid_video_url' => 'Please enter a valid video URL.',
+    ],
 ];

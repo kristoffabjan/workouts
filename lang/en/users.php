@@ -46,4 +46,9 @@ return [
     'relation_manager' => [
         'assigned_trainings' => 'Assigned Trainings',
     ],
+
+    'validation' => [
+        'cannot_delete_with_content' => 'This user cannot be deleted because they have created trainings or exercises. Consider transferring ownership first.',
+        'cannot_delete_self' => 'You cannot delete your own account.',
+    ],
 ];

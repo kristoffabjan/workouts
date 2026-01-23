@@ -79,4 +79,14 @@ return [
         'not_completed' => 'Not completed yet',
         'no_feedback' => 'No feedback provided',
     ],
+
+    'validation' => [
+        'scheduled_date_required' => 'A scheduled date is required when status is Scheduled.',
+        'scheduled_date_in_past' => 'The scheduled date cannot be in the past.',
+        'no_date_selected' => 'Please select at least one date for scheduling.',
+        'feedback_deadline_passed' => 'The feedback deadline has passed. You can no longer submit feedback for this training.',
+        'user_not_in_team' => 'One or more selected users are not members of this team.',
+        'cannot_edit_past_training' => 'You cannot edit a training that has already been scheduled in the past.',
+        'cannot_assign_past_training' => 'You cannot assign users to a training that has already been scheduled in the past.',
+    ],
 ];

@@ -90,6 +90,7 @@ class AssignedUsersRelationManager extends RelationManager
                 AttachAction::make()
                     ->preloadRecordSelect()
                     ->multiple()
+                    ->visible(fn (): bool => ! $this->isScheduledInPast())
                     ->recordSelectOptionsQuery(function (Builder $query) {
                         $team = Filament::getTenant();
                         if ($team) {
@@ -110,7 +111,8 @@ class AssignedUsersRelationManager extends RelationManager
             ])
             ->recordActions([
                 ViewAction::make(),
-                DetachAction::make(),
+                DetachAction::make()
+                    ->visible(fn (): bool => ! $this->isScheduledInPast()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -118,5 +120,12 @@ class AssignedUsersRelationManager extends RelationManager
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->orderBy('training_user.created_at', 'desc'));
+    }
+
+    protected function isScheduledInPast(): bool
+    {
+        $ownerRecord = $this->getOwnerRecord();
+
+        return $ownerRecord->scheduled_at && $ownerRecord->scheduled_at->isPast();
     }
 }

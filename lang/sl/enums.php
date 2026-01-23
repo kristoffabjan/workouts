@@ -11,5 +11,6 @@ return [
         'scheduled' => 'Načrtovano',
         'completed' => 'Zaključeno',
         'skipped' => 'Izpuščeno',
+        'missed' => 'Zamujeno',
     ],
 ];

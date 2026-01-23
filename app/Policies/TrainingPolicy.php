@@ -53,6 +53,10 @@ class TrainingPolicy
             return true;
         }
 
+        if ($this->isScheduledInPast($training)) {
+            return false;
+        }
+
         $team = Filament::getTenant();
 
         return $team && $training->team_id === $team->id && $user->isCoach($team);
@@ -107,5 +111,10 @@ class TrainingPolicy
         }
 
         return $training->assignedUsers()->where('user_id', $user->id)->exists();
+    }
+
+    private function isScheduledInPast(Training $training): bool
+    {
+        return $training->scheduled_at && $training->scheduled_at->isPast();
     }
 }

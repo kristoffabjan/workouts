@@ -67,4 +67,9 @@ return [
         'endurance' => 'Vzdržljivost',
         'power' => 'Eksplozivnost',
     ],
+
+    'validation' => [
+        'cannot_delete_attached' => 'Te vaje ni mogoče izbrisati, ker je pripeta enemu ali več treningom.',
+        'invalid_video_url' => 'Prosimo, vnesite veljavno video povezavo.',
+    ],
 ];

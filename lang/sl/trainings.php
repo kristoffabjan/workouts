@@ -79,4 +79,14 @@ return [
         'not_completed' => 'Še ni zaključeno',
         'no_feedback' => 'Brez povratne informacije',
     ],
+
+    'validation' => [
+        'scheduled_date_required' => 'Datum je obvezen, ko je status nastavljen na Načrtovano.',
+        'scheduled_date_in_past' => 'Datum ne more biti v preteklosti.',
+        'no_date_selected' => 'Prosimo, izberite vsaj en datum za načrtovanje.',
+        'feedback_deadline_passed' => 'Rok za oddajo povratne informacije je potekel. Ne morete več oddati povratne informacije za ta trening.',
+        'user_not_in_team' => 'Eden ali več izbranih uporabnikov ni član te ekipe.',
+        'cannot_edit_past_training' => 'Ne morete urejati treninga, ki je bil že načrtovan v preteklosti.',
+        'cannot_assign_past_training' => 'Ne morete dodeljevati uporabnikov treningu, ki je bil že načrtovan v preteklosti.',
+    ],
 ];

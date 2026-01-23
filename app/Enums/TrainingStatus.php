@@ -15,6 +15,7 @@ enum TrainingStatus: string implements HasColor, HasIcon, HasLabel
     case Scheduled = 'scheduled';
     case Completed = 'completed';
     case Skipped = 'skipped';
+    case Missed = 'missed';
 
     public function getLabel(): ?string
     {
@@ -28,6 +29,7 @@ enum TrainingStatus: string implements HasColor, HasIcon, HasLabel
             self::Scheduled => Color::Blue,
             self::Completed => Color::Green,
             self::Skipped => Color::Orange,
+            self::Missed => Color::Red,
         };
     }
 
@@ -38,6 +40,7 @@ enum TrainingStatus: string implements HasColor, HasIcon, HasLabel
             self::Scheduled => Heroicon::Calendar,
             self::Completed => Heroicon::CheckCircle,
             self::Skipped => Heroicon::XCircle,
+            self::Missed => Heroicon::Clock,
         };
     }
 }
