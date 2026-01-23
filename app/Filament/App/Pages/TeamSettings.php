@@ -7,24 +7,131 @@ use App\Models\Team;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TeamSettings extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static ?string $navigationLabel = 'Team Settings';
-
-    protected static ?string $title = 'Team Settings';
-
     protected static ?int $navigationSort = 100;
 
     protected string $view = 'filament.app.pages.team-settings';
+
+    public ?array $data = [];
+
+    public static function getNavigationLabel(): string
+    {
+        return __('settings.team.navigation_label');
+    }
+
+    public function getTitle(): string
+    {
+        return __('settings.team.title');
+    }
+
+    public function mount(): void
+    {
+        $team = $this->getTeam();
+        $logo = $team->settings['logo'] ?? null;
+
+        $this->data = [
+            'name' => $team->name,
+            'logo' => $logo ? [$logo] : [],
+            'default_reminder_time' => $team->settings['default_reminder_time'] ?? '09:00',
+        ];
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make(__('settings.team.title'))
+                    ->description(__('settings.team.subheading'))
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('settings.team.fields.name'))
+                            ->required()
+                            ->maxLength(255)
+                            ->disabled(fn (): bool => ! $this->canEditSettings()),
+
+                        FileUpload::make('logo')
+                            ->label(__('settings.team.fields.logo'))
+                            ->image()
+                            ->directory('team-logos')
+                            ->visibility('public')
+                            ->automaticallyResizeImagesMode('cover')
+                            ->imageAspectRatio('1:1')
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesToWidth(200)
+                            ->automaticallyResizeImagesToHeight(200)
+                            ->disabled(fn (): bool => ! $this->canEditSettings()),
+
+                        TimePicker::make('default_reminder_time')
+                            ->label(__('settings.team.fields.default_reminder_time'))
+                            ->seconds(false)
+                            ->disabled(fn (): bool => ! $this->canEditSettings()),
+                    ])
+                    ->columns(1),
+            ])
+            ->statePath('data');
+    }
+
+    public function save(): void
+    {
+        if (! $this->canEditSettings()) {
+            Notification::make()
+                ->danger()
+                ->title(__('app.messages.error'))
+                ->body(__('app.messages.unauthorized'))
+                ->send();
+
+            return;
+        }
+
+        $data = $this->getSchema('form')->getState();
+        $team = $this->getTeam();
+        $oldSlug = $team->slug;
+        $newSlug = Str::slug($data['name']);
+
+        $logoValue = is_array($data['logo']) ? ($data['logo'][0] ?? null) : $data['logo'];
+
+        $team->update([
+            'name' => $data['name'],
+            'slug' => $newSlug,
+            'settings' => array_merge($team->settings ?? [], [
+                'logo' => $logoValue,
+                'default_reminder_time' => $data['default_reminder_time'],
+            ]),
+        ]);
+
+        Notification::make()
+            ->success()
+            ->title(__('settings.team.messages.saved'))
+            ->send();
+
+        if ($oldSlug !== $newSlug) {
+            $this->redirect(Filament::getUrl($team));
+        }
+    }
+
+    public function canEditSettings(): bool
+    {
+        $team = $this->getTeam();
+        $user = auth()->user();
+
+        return $this->isOwner() || $user->getRoleInTeam($team) === TeamRole::Coach;
+    }
 
     public function getTeam(): Team
     {

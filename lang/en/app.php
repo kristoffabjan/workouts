@@ -40,6 +40,7 @@ return [
         'updated' => 'Updated successfully',
         'deleted' => 'Deleted successfully',
         'error' => 'An error occurred',
+        'unauthorized' => 'You are not authorized to perform this action.',
         'confirm_delete' => 'Are you sure you want to delete this?',
         'no_results' => 'No results found',
         'loading' => 'Loading...',

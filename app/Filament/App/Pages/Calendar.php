@@ -19,14 +19,14 @@ class Calendar extends Page
 
     protected string $view = 'filament.app.pages.calendar';
 
-    protected function getHeaderWidgets(): array
+    protected function getFooterWidgets(): array
     {
         return [
             CalendarWidget::class,
         ];
     }
 
-    public function getHeaderWidgetsColumns(): int|array
+    public function getFooterWidgetsColumns(): int|array
     {
         return 1;
     }

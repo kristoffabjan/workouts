@@ -8,7 +8,20 @@
         $clientCount = $team->clients()->count();
     @endphp
 
-    <div class="grid gap-6 md:grid-cols-2">
+    {{-- Team Settings Form --}}
+    <form wire:submit="save">
+        {{ $this->form }}
+
+        @if($this->canEditSettings())
+            <div class="mt-6 flex justify-end">
+                <x-filament::button type="submit" icon="heroicon-o-check">
+                    {{ __('app.actions.save') }}
+                </x-filament::button>
+            </div>
+        @endif
+    </form>
+
+    <div class="grid gap-6 md:grid-cols-2 mt-6">
         {{-- Team Overview --}}
         <x-filament::section>
             <x-slot name="heading">

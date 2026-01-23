@@ -1029,26 +1029,63 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 17: App settings & Configuration 
+## Milestone 17: App settings & Configuration ✅
 
 **Goal**: Implement application settings for customization.
 ### Tasks
-- [ ] Install spatie settings package
-- [ ] Install https://filamentphp.com/plugins/filament-spatie-settings
-- [ ] Link settings to Filament app and admin panel - https://filamentphp.com/docs/4.x/navigation/user-menu
-    - Create AppSettings and AdminSettings pages
-- [ ] Create Application settings
+- [x] Install spatie settings package- https://github.com/spatie/laravel-settings
+- [x] Install https://filamentphp.com/plugins/filament-spatie-settings
+- [x] Link settings to Filament app and admin panel - https://filamentphp.com/docs/4.x/navigation/user-menu
+    - Created ManageApplicationSettings page in Admin panel
+    - Extended TeamSettings page in App panel with settings form
+- [x] Create Application settings
     - Scoped to admin panel only and admin user
     - Settings: Application Name, Application Logo (image upload), Default Language (select), Timezone (select)
-- [ ] Create Team settings
+- [x] Create Team settings
     - Scoped to app panel and per team
     - Settings: Team Name, Team Logo (image upload), Default Training Reminder Time (timepicker)
-- [ ] Update application to use settings where applicable
-    - Application name/logo in headers
-    - Default language for new users
-    - Timezone for date/time displays
-- [ ] Tests: 15 passing tests for settings functionality
+- [x] Update application to use settings where applicable
+    - Application name/logo in headers (home page, panel branding)
+    - Default language for calendar plugin
+    - Timezone for calendar plugin
+- [ ] Hide team settings for personal teams(is_personal = true) 
+- [ ] Include user settings, User model,  https://filamentphp.com/docs/4.x/navigation/user-menu
+  - Settings: Preferred Language, logo
+- [x] Tests: 26 passing tests for settings functionality (exceeded target of 15)
 
+-----
+
+## Milestone 18: User profile login enhancements
+**Goal**: Improve user profile management and login experience.
+### Tasks
+- [ ] Crete flow for forgot password and reset password
+  - Use Filament auth features
+- [ ] Reuse user settings from milestone 17
+  - Preferred language
+  - Profile picture upload
+  - [ ]  Add form for password change
+- [ ] Update login/register forms to include language selection
+- [ ] Add form for requesting app access
+  - New page with form to request access
+  - Sends notification to system admin
+  - FE and BE validation
+  - Rate limiting to prevent spam
+- [ ] Tests: at least 15 passing tests for user profile and login enhancements
+
+
+---
+
+## Disk setup
+**Goal**: Configure file storage for application assets.
+### Tasks
+- [ ] Configure local disk for development
+- [ ] Divide disk into teams and users folders
+  - [ ] Users namespace storage/app/users/{user_id}/
+  - [ ] Teams namespace storage/app/teams/{team_id}/
+- [ ] Update Filament file upload fields to use correct disk and paths
+- [ ] Set up symbolic link for public access
+- [ ] Add validation for file uploads
+- [ ] Tests: at least 10 passing tests for file storage functionality
 ## Implementation Notes
 
 ### Development Workflow

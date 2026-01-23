@@ -40,6 +40,7 @@ return [
         'updated' => 'Uspešno posodobljeno',
         'deleted' => 'Uspešno izbrisano',
         'error' => 'Prišlo je do napake',
+        'unauthorized' => 'Nimate dovoljenja za izvajanje tega dejanja.',
         'confirm_delete' => 'Ali ste prepričani, da želite to izbrisati?',
         'no_results' => 'Ni rezultatov',
         'loading' => 'Nalaganje...',
