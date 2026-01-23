@@ -748,19 +748,21 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 10.2: Info pages
+## Milestone 10.2: Info pages ✅
 **Goal**: Create static info pages for Terms of Service and Privacy Policy and feature pages
 ### Tasks
-- [ ] Create new views:
-  - `resources/views/terms.blade.php` for Terms of Service
-  - `resources/views/privacy.blade.php` for Privacy Policy
-  - `resources/views/features.blade.php` for Features overview, add detailed description of app features
-- [ ] Update web routes to serve these pages:
+- [x] Create shared layout component `resources/views/components/public-layout.blade.php`
+- [x] Create new views:
+  - `resources/views/terms.blade.php` for Terms of Service (placeholder content)
+  - `resources/views/privacy.blade.php` for Privacy Policy (placeholder content)
+  - `resources/views/features.blade.php` for Features overview (detailed app features)
+- [x] Update web routes to serve these pages:
+  - `Route::view('/features', 'features')`
   - `Route::view('/terms', 'terms')`
   - `Route::view('/privacy', 'privacy')`
-  - `Route::view('/features', 'features')`
-- [ ] Add navigation links to these pages in the homepage and footer (if applicable)
-- [ ] Populate pages with placeholder text (to be replaced with actual legal content later)
+- [x] Add navigation links to these pages in the homepage header and footer
+- [x] Populate pages with placeholder text (to be replaced with actual legal content later)
+
 **Deliverable**: ✅ Static info pages accessible from homepage and footer
 
 ## Milestone 10.2: Language Support
