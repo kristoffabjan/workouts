@@ -4,3 +4,39 @@
 @source "../../../../vendor/bezhansalleh/filament-language-switch/resources/views/**/*.blade.php";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    /* Blue-tinted dark palette for premium fitness app feel */
+    --color-gray-50: #f0f4f8;
+    --color-gray-100: #d9e2ec;
+    --color-gray-200: #bcccdc;
+    --color-gray-300: #9fb3c8;
+    --color-gray-400: #829ab1;
+    --color-gray-500: #627d98;
+    --color-gray-600: #486581;
+    --color-gray-700: #334e68;
+    --color-gray-800: #243b53;
+    --color-gray-900: #1a2744;
+    --color-gray-950: #0f1929;
+}
+
+/* Colorful sidebar hover states */
+.dark .fi-sidebar-item:hover {
+    background: rgba(229, 168, 35, 0.1);
+}
+
+/* Active navigation with amber accent */
+.dark .fi-sidebar-item.fi-active {
+    background: rgba(229, 168, 35, 0.15);
+    border-left: 3px solid #E5A823;
+}
+
+/* Make badges pop on dark background */
+.dark .fi-badge {
+    font-weight: 600;
+}
+
+/* Stats cards with subtle glow effect */
+.dark .fi-stats-overview-widget .fi-stats-overview-card {
+    border: 1px solid rgba(229, 168, 35, 0.1);
+}

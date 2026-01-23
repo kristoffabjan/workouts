@@ -13,7 +13,7 @@
         <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-zinc-200 dark:border-zinc-700">
             <div class="max-w-4xl mx-auto flex justify-between items-center">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <div class="flex aspect-square size-10 items-center justify-center rounded-lg bg-amber-500 text-white">
+                    <div class="flex aspect-square size-10 items-center justify-center rounded-lg bg-[#5A9CB5] text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                             <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
                         </svg>
@@ -22,7 +22,7 @@
                 </a>
                 <nav class="flex items-center gap-4">
                     <a href="{{ route('features') }}" class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">Features</a>
-                    <a href="{{ route('filament.app.auth.login') }}" class="text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors">Login</a>
+                    <a href="{{ route('filament.app.auth.login') }}" class="text-sm font-medium text-[#5A9CB5] hover:text-[#4A8CA5] transition-colors">Login</a>
                 </nav>
             </div>
         </header>

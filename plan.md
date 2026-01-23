@@ -1075,6 +1075,22 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
+## Milestone 19: App color scheme ✅
+**Goal**: Implement customizable color schemes for the application.
+### Tasks
+- [x] Apply colors, using next colors
+  - Primary: #5A9CB5 (blue)
+  - Warning: #FAAC68 (orange)
+  - Info: #FACE68 (yellow)
+  - Danger: #FA6868 (red)
+  - Success: #5AB58A (green)
+- [x] Updated Filament panel providers (AppPanelProvider, AdminPanelProvider)
+- [x] Updated homepage and public pages
+- [x] Updated calendar widget status colors
+- [x] Updated features page colors
+- [x] Rebuilt frontend assets 
+
+
 ## Disk setup
 **Goal**: Configure file storage for application assets.
 ### Tasks

@@ -11,7 +11,7 @@
             <span class="text-sm text-gray-600 dark:text-gray-400">Draft</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-block w-3 h-3 rounded-full bg-amber-400"></span>
+            <span class="inline-block w-3 h-3 rounded-full bg-[#FAAC68]"></span>
             <span class="text-sm text-gray-600 dark:text-gray-400">Scheduled</span>
         </div>
         <div class="flex items-center gap-2">

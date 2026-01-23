@@ -222,7 +222,7 @@ describe('Calendar widget fetchEvents for client', function () {
         ]);
 
         expect($events)->toHaveCount(1);
-        expect($events[0]['backgroundColor'])->toBe('rgb(34, 197, 94)'); // green-500
+        expect($events[0]['backgroundColor'])->toBe('#5AB58A'); // brand success
         expect($events[0]['extendedProps']['isCompleted'])->toBeTrue();
     });
 });

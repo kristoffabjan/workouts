@@ -86,14 +86,14 @@ class CalendarWidget extends FullCalendarWidget
     protected function getEventColor(TrainingStatus $status, bool $isCompleted): string
     {
         if ($isCompleted) {
-            return 'rgb(34, 197, 94)'; // green-500
+            return '#5AB58A'; // brand success
         }
 
         return match ($status) {
             TrainingStatus::Draft => 'rgb(156, 163, 175)', // gray-400
-            TrainingStatus::Scheduled => 'rgb(251, 191, 36)', // amber-400
-            TrainingStatus::Completed => 'rgb(34, 197, 94)', // green-500
-            TrainingStatus::Skipped => 'rgb(239, 68, 68)', // red-500
+            TrainingStatus::Scheduled => '#FAAC68', // brand warning/orange
+            TrainingStatus::Completed => '#5AB58A', // brand success
+            TrainingStatus::Skipped, TrainingStatus::Missed => '#FA6868', // brand danger/red
         };
     }
 

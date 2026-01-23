@@ -153,16 +153,16 @@
         </x-slot>
 
         <div class="grid grid-cols-3 gap-4">
-            <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-4 text-center">
-                <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">{{ $memberCount }}</div>
+            <div class="rounded-lg bg-gray-50 dark:bg-[#E5A823]/10 border border-transparent dark:border-[#E5A823]/20 p-4 text-center">
+                <div class="text-3xl font-bold text-[#E5A823]">{{ $memberCount }}</div>
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Total Members</div>
             </div>
-            <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-4 text-center">
-                <div class="text-3xl font-bold text-amber-600 dark:text-amber-400">{{ $coachCount }}</div>
+            <div class="rounded-lg bg-gray-50 dark:bg-[#FAAC68]/10 border border-transparent dark:border-[#FAAC68]/20 p-4 text-center">
+                <div class="text-3xl font-bold text-[#FAAC68]">{{ $coachCount }}</div>
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Coaches</div>
             </div>
-            <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-4 text-center">
-                <div class="text-3xl font-bold text-sky-600 dark:text-sky-400">{{ $clientCount }}</div>
+            <div class="rounded-lg bg-gray-50 dark:bg-[#5AB58A]/10 border border-transparent dark:border-[#5AB58A]/20 p-4 text-center">
+                <div class="text-3xl font-bold text-[#5AB58A]">{{ $clientCount }}</div>
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Clients</div>
             </div>
         </div>

@@ -15,6 +15,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Enums\ThemeMode;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -38,9 +39,15 @@ class AppPanelProvider extends PanelProvider
             ->brandLogo(fn (): ?string => ($logo = SettingsHelper::getApplicationLogo()) ? Storage::url($logo) : null)
             ->brandLogoHeight('2rem')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#E5A823'),
+                'danger' => Color::hex('#FA6868'),
+                'warning' => Color::hex('#FAAC68'),
+                'info' => Color::hex('#FACE68'),
+                'success' => Color::hex('#5AB58A'),
             ])
+            ->defaultThemeMode(ThemeMode::Dark)
             ->databaseNotifications()
+            ->font("Space Grotesk")
             ->tenant(Team::class, slugAttribute: 'slug')
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
