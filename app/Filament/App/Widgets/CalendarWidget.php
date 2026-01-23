@@ -15,6 +15,11 @@ class CalendarWidget extends FullCalendarWidget
 {
     public Model|string|null $model = Training::class;
 
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     public function fetchEvents(array $info): array
     {
         $user = auth()->user();
