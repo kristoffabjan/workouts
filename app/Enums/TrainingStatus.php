@@ -9,7 +9,7 @@ use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
-enum TrainingStatus: string implements HasLabel, HasColor, HasIcon
+enum TrainingStatus: string implements HasColor, HasIcon, HasLabel
 {
     case Draft = 'draft';
     case Scheduled = 'scheduled';
@@ -18,12 +18,7 @@ enum TrainingStatus: string implements HasLabel, HasColor, HasIcon
 
     public function getLabel(): ?string
     {
-        return match ($this) {
-            self::Draft => 'Draft',
-            self::Scheduled => 'Scheduled',
-            self::Completed => 'Completed',
-            self::Skipped => 'Skipped',
-        };
+        return __('enums.training_status.'.$this->value);
     }
 
     public function getColor(): string|array|null

@@ -16,16 +16,19 @@ class TrainingForm
         return $schema
             ->components([
                 TextInput::make('title')
+                    ->label(__('trainings.fields.title'))
                     ->required()
                     ->maxLength(255),
                 RichEditor::make('content')
+                    ->label(__('trainings.fields.content'))
                     ->columnSpanFull(),
                 Select::make('status')
+                    ->label(__('trainings.fields.status'))
                     ->options(TrainingStatus::class)
                     ->default(TrainingStatus::Draft)
                     ->required(),
                 DateTimePicker::make('scheduled_at')
-                    ->label('Scheduled At'),
+                    ->label(__('trainings.fields.scheduled_at')),
             ]);
     }
 }

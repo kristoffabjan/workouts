@@ -16,10 +16,7 @@ enum TeamRole: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): ?string
     {
-        return match ($this) {
-            self::Coach => 'Coach',
-            self::Client => 'Client',
-        };
+        return __('enums.team_role.'.$this->value);
     }
 
     public function getColor(): string|array|null

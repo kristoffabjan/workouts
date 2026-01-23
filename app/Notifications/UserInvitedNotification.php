@@ -34,36 +34,36 @@ class UserInvitedNotification extends Notification
     private function existingUserMail(): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('You have been invited to join a team')
+            ->subject(__('notifications.user_invited.team_subject'))
             ->greeting('Hello!')
-            ->line("You have been invited to join the team: **{$this->team->name}**.");
+            ->line(__('notifications.user_invited.team_greeting', ['team_name' => $this->team->name]));
 
         $acceptUrl = url('/invitation/accept/'.$this->token);
 
         return $message
-            ->line('Click the button below to confirm and join the team.')
-            ->action('Join Team', $acceptUrl)
-            ->line('This invitation will expire in 7 days.');
+            ->line(__('notifications.user_invited.team_line'))
+            ->action(__('notifications.user_invited.team_button'), $acceptUrl)
+            ->line(__('notifications.user_invited.team_expire'));
     }
 
     private function newUserMail(): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('You have been invited to Workouts App')
+            ->subject(__('notifications.user_invited.individual_subject'))
             ->greeting('Hello!');
 
         if ($this->team) {
-            $message->line("You have been invited to join the team: **{$this->team->name}**.");
+            $message->line(__('notifications.user_invited.team_greeting', ['team_name' => $this->team->name]));
         } else {
-            $message->line('You have been invited to join the Workouts App.');
+            $message->line(__('notifications.user_invited.individual_greeting'));
         }
 
         $acceptUrl = url('/invitation/accept/'.$this->token);
 
         return $message
-            ->line('Click the button below to create your account and get started.')
-            ->action('Accept Invitation', $acceptUrl)
-            ->line('This invitation will expire in 7 days.');
+            ->line(__('notifications.user_invited.team_line'))
+            ->action(__('notifications.user_invited.individual_button'), $acceptUrl)
+            ->line(__('notifications.user_invited.team_expire'));
     }
 
     public function toArray(object $notifiable): array

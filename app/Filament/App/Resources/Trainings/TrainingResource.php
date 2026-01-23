@@ -13,9 +13,7 @@ use App\Filament\App\Resources\Trainings\Schemas\TrainingForm;
 use App\Filament\App\Resources\Trainings\Tables\TrainingsTable;
 use App\Models\Training;
 use BackedEnum;
-use Dom\Text;
 use Filament\Facades\Filament;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -33,6 +31,21 @@ class TrainingResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
+    public static function getModelLabel(): string
+    {
+        return __('trainings.resource.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('trainings.resource.plural_label');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('trainings.resource.navigation_label');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return TrainingForm::configure($schema);
@@ -41,23 +54,26 @@ class TrainingResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Training Details')
+            Section::make(__('trainings.sections.training_details'))
                 ->schema([
-                    TextEntry::make('title'),
+                    TextEntry::make('title')
+                        ->label(__('trainings.fields.title')),
                     TextEntry::make('status')
+                        ->label(__('trainings.fields.status'))
                         ->formatStateUsing(fn (TrainingStatus $state): string => $state->getLabel())
                         ->icon(fn (TrainingStatus $state): mixed => $state->getIcon())
                         ->color(fn (TrainingStatus $state): array => $state->getColor()),
                     TextEntry::make('scheduled_at')
-                        ->label('Scheduled At')
+                        ->label(__('trainings.fields.scheduled_at'))
                         ->dateTime(),
                     TextEntry::make('creator.name')
-                        ->label('Created By'),
+                        ->label(__('trainings.fields.created_by')),
                 ])
                 ->columns(2),
-            Section::make('Content')
+            Section::make(__('trainings.sections.content'))
                 ->schema([
                     TextEntry::make('content')
+                        ->label(__('trainings.fields.content'))
                         ->html()
                         ->columnSpanFull(),
                 ])

@@ -57,15 +57,15 @@ class ViewTraining extends ViewRecord
             ->first()
             ?->pivot;
 
-        return Section::make('Your Completion')
+        return Section::make(__('trainings.sections.your_completion'))
             ->icon(Heroicon::CheckCircle)
             ->schema([
                 TextEntry::make('completed_at')
-                    ->label('Completed At')
+                    ->label(__('trainings.completion.completed_at'))
                     ->state($pivot?->completed_at?->format('M j, Y g:i A')),
                 TextEntry::make('feedback')
-                    ->label('Your Feedback')
-                    ->state($pivot?->feedback ?? 'No feedback provided')
+                    ->label(__('trainings.completion.feedback_label'))
+                    ->state($pivot?->feedback ?? __('trainings.completion.no_feedback'))
                     ->columnSpanFull(),
             ])
             ->columns(2)
@@ -84,20 +84,20 @@ class ViewTraining extends ViewRecord
     protected function getMarkAsCompleteAction(): Action
     {
         return Action::make('markAsComplete')
-            ->label('Mark as Complete')
+            ->label(__('trainings.actions.mark_complete'))
             ->icon(Heroicon::Check)
             ->color('success')
             ->authorize('markComplete')
             ->visible(fn (): bool => $this->canMarkAsComplete())
             ->schema([
                 Textarea::make('feedback')
-                    ->label('Feedback (optional)')
-                    ->placeholder('How did the training go? Any notes for your coach?')
+                    ->label(__('trainings.completion.feedback_label'))
+                    ->placeholder(__('trainings.completion.feedback_placeholder'))
                     ->rows(4),
             ])
-            ->modalHeading('Mark Training as Complete')
-            ->modalDescription('Confirm that you have completed this training. You can optionally leave feedback for your coach.')
-            ->modalSubmitActionLabel('Mark Complete')
+            ->modalHeading(__('trainings.actions.mark_complete'))
+            ->modalDescription(__('trainings.completion.confirm_message'))
+            ->modalSubmitActionLabel(__('trainings.actions.mark_complete'))
             ->action(function (array $data): void {
                 $this->markTrainingAsComplete($data['feedback'] ?? null);
             });
@@ -112,20 +112,20 @@ class ViewTraining extends ViewRecord
             ?->pivot;
 
         return Action::make('editFeedback')
-            ->label('Edit Feedback')
+            ->label(__('trainings.actions.edit_feedback'))
             ->icon(Heroicon::PencilSquare)
             ->color('gray')
             ->visible(fn (): bool => $this->canEditFeedback())
             ->schema([
                 Textarea::make('feedback')
-                    ->label('Your Feedback')
-                    ->placeholder('How did the training go? Any notes for your coach?')
+                    ->label(__('trainings.completion.feedback_label'))
+                    ->placeholder(__('trainings.completion.feedback_placeholder'))
                     ->rows(4)
                     ->default($pivot?->feedback),
             ])
-            ->modalHeading('Edit Your Feedback')
-            ->modalDescription('Update your feedback for this completed training.')
-            ->modalSubmitActionLabel('Save Feedback')
+            ->modalHeading(__('trainings.actions.edit_feedback'))
+            ->modalDescription(__('trainings.completion.edit_feedback_message'))
+            ->modalSubmitActionLabel(__('app.actions.save'))
             ->action(function (array $data): void {
                 $this->updateFeedback($data['feedback'] ?? null);
             });
@@ -189,8 +189,7 @@ class ViewTraining extends ViewRecord
         );
 
         Notification::make()
-            ->title('Training marked as complete')
-            ->body('Your coach has been notified.')
+            ->title(__('trainings.notifications.marked_complete'))
             ->success()
             ->send();
 
@@ -206,7 +205,7 @@ class ViewTraining extends ViewRecord
         ]);
 
         Notification::make()
-            ->title('Feedback updated')
+            ->title(__('trainings.notifications.feedback_updated'))
             ->success()
             ->send();
 

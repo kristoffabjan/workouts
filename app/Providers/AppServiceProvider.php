@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -31,6 +32,20 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->configureFilament();
+        $this->configureLanguageSwitch();
+    }
+
+    protected function configureLanguageSwitch(): void
+    {
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch
+                ->locales(['en', 'sl'])
+                ->labels([
+                    'en' => 'English',
+                    'sl' => 'Slovenščina',
+                ])
+                ->circular();
+        });
     }
 
     protected function configureFilament(): void

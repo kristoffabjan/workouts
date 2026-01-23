@@ -765,16 +765,29 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 **Deliverable**: ✅ Static info pages accessible from homepage and footer
 
-## Milestone 10.2: Language Support
+## Milestone 10.2: Language Support ✅
 **Goal**: Implement multi-language support for English and Slovenian languages.
 ### Tasks
-- [ ] Add language files for English and Slovenian in `resources/lang/en` and `resources/lang/sl` respectively.
-- [ ] Translate all Filament resources, models, policies, notifications, and UI elements.
-- [ ] Implement language switcher in Filament panels (both Admin and App panels)
-    - https://filamentphp.com/plugins/bezhansalleh-language-switch, version 4
-- [ ] Test: Switch languages in both panels, verify translations
+- [x] Add language files for English and Slovenian in `lang/en` and `lang/sl` respectively.
+  - Created translation files: app.php, enums.php, exercises.php, invitation.php, notifications.php, teams.php, trainings.php, users.php, widgets.php
+- [x] Translate all Filament resources, models, policies, notifications, and UI elements.
+  - Updated TeamRole and TrainingStatus enums to use translations
+  - Updated TrainingResource, ExerciseResource, UserResource with translated labels
+  - Updated TrainingForm, ExerciseForm with translated field labels
+  - Updated TrainingsTable, ExercisesTable with translated column and filter labels
+  - Updated ScheduleTrainingAction with translated strings
+  - Updated ViewTraining page with translated action labels and messages
+  - Updated TrainingCompletedNotification and UserInvitedNotification with translations
+  - Updated accept-invitation Livewire component with translations
+- [x] Implement language switcher in Filament panels (both Admin and App panels)
+  - Installed bezhansalleh/filament-language-switch v4.0.0
+  - Configured in AppServiceProvider with English and Slovenian locales
+  - Created custom theme CSS for Admin panel with language switch source
+  - Updated App panel theme CSS with language switch source
+  - Configured circular badges for language labels
+- [x] Test: 217 tests pass for all related resources
 
-**Deliverable**: Fully localized application with English and Slovenian support
+**Deliverable**: ✅ Fully localized application with English and Slovenian support, language switcher in both panels
 
 
 ## Milestone 11: Policies & Authorization

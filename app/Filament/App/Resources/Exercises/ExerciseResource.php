@@ -27,6 +27,21 @@ class ExerciseResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('exercises.resource.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('exercises.resource.plural_label');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('exercises.resource.navigation_label');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ExerciseForm::configure($schema);
@@ -47,7 +62,7 @@ class ExerciseResource extends Resource
         $tags = $record->tags ?? [];
 
         return [
-            'Tags' => implode(', ', array_slice($tags, 0, 5)),
+            __('exercises.fields.tags') => implode(', ', array_slice($tags, 0, 5)),
         ];
     }
 

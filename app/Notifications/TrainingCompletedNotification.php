@@ -28,17 +28,17 @@ class TrainingCompletedNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         $body = $this->feedback
-            ? "Feedback: {$this->feedback}"
-            : 'No feedback provided';
+            ? __('notifications.training_completed.feedback', ['feedback' => $this->feedback])
+            : __('notifications.training_completed.no_feedback');
 
         return FilamentNotification::make()
-            ->title("{$this->client->name} completed training")
+            ->title(__('notifications.training_completed.title', ['name' => $this->client->name]))
             ->body($body)
             ->icon('heroicon-o-check-circle')
             ->success()
             ->actions([
                 Action::make('view')
-                    ->label('View Training')
+                    ->label(__('notifications.training_completed.view_training'))
                     ->url(TrainingResource::getUrl('view', [
                         'record' => $this->training,
                         'tenant' => $this->training->team,

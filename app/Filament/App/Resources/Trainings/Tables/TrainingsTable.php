@@ -27,12 +27,15 @@ class TrainingsTable
         return $table
             ->columns([
                 TextColumn::make('title')
+                    ->label(__('trainings.fields.title'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label(__('trainings.fields.status'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('scheduled_at')
+                    ->label(__('trainings.fields.scheduled_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')
@@ -42,40 +45,41 @@ class TrainingsTable
             ])
             ->filters([
                 SelectFilter::make('status')
+                    ->label(__('trainings.filters.status'))
                     ->options(TrainingStatus::class),
                 Filter::make('scheduled_at')
                     ->schema([
                         \Filament\Forms\Components\DatePicker::make('scheduled_from')
-                            ->label('From'),
+                            ->label(__('trainings.filters.from')),
                         \Filament\Forms\Components\DatePicker::make('scheduled_until')
-                            ->label('Until'),
+                            ->label(__('trainings.filters.until')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['scheduled_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
                             )
                             ->when(
                                 $data['scheduled_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
 
                         if ($data['scheduled_from'] ?? null) {
-                            $indicators['scheduled_from'] = 'From ' . \Carbon\Carbon::parse($data['scheduled_from'])->toFormattedDateString();
+                            $indicators['scheduled_from'] = 'From '.\Carbon\Carbon::parse($data['scheduled_from'])->toFormattedDateString();
                         }
 
                         if ($data['scheduled_until'] ?? null) {
-                            $indicators['scheduled_until'] = 'Until ' . \Carbon\Carbon::parse($data['scheduled_until'])->toFormattedDateString();
+                            $indicators['scheduled_until'] = 'Until '.\Carbon\Carbon::parse($data['scheduled_until'])->toFormattedDateString();
                         }
 
                         return $indicators;
                     }),
                 SelectFilter::make('assigned_user')
-                    ->label('Assigned To')
+                    ->label(__('trainings.filters.assigned_to'))
                     ->options(function () {
                         $team = Filament::getTenant();
                         if (! $team) {

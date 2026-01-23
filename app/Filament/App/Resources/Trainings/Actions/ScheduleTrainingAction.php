@@ -25,71 +25,70 @@ class ScheduleTrainingAction
     public static function make(): Action
     {
         return Action::make('schedule')
-            ->label('Schedule')
+            ->label(__('trainings.actions.schedule'))
             ->icon(Heroicon::OutlinedCalendar)
             ->color('success')
             ->schema([
                 Tabs::make('schedule_method')
                     ->tabs([
-                        Tab::make('Single Date')
+                        Tab::make(__('trainings.schedule.single_date'))
                             ->icon(Heroicon::OutlinedCalendar)
                             ->schema([
                                 DateTimePicker::make('single_date')
-                                    ->label('Schedule Date & Time')
+                                    ->label(__('trainings.schedule.schedule_date_time'))
                                     ->native(false)
                                     ->minDate(now())
                                     ->default(now()->addDay()->setHour(9)->setMinute(0)),
                             ]),
-                        Tab::make('Multiple Dates')
+                        Tab::make(__('trainings.schedule.multiple_dates'))
                             ->icon(Heroicon::OutlinedCalendarDays)
                             ->schema([
                                 Repeater::make('specific_dates')
-                                    ->label('Select Dates')
+                                    ->label(__('trainings.schedule.multiple_dates'))
                                     ->schema([
                                         DateTimePicker::make('date')
                                             ->native(false)
                                             ->minDate(now()),
                                     ])
                                     ->defaultItems(1)
-                                    ->addActionLabel('Add Date')
+                                    ->addActionLabel(__('app.actions.create'))
                                     ->reorderable(false)
                                     ->columns(1),
                             ]),
-                        Tab::make('Weekly Pattern')
+                        Tab::make(__('trainings.schedule.weekly_pattern'))
                             ->icon(Heroicon::OutlinedArrowPath)
                             ->schema([
                                 DateTimePicker::make('start_date')
-                                    ->label('Start Date & Time')
+                                    ->label(__('trainings.schedule.start_date_time'))
                                     ->native(false)
                                     ->minDate(now()),
                                 TextInput::make('weeks')
-                                    ->label('Number of Weeks')
+                                    ->label(__('trainings.schedule.number_of_weeks'))
                                     ->numeric()
                                     ->minValue(1)
                                     ->maxValue(52),
                                 Select::make('days_of_week')
-                                    ->label('Days of Week')
+                                    ->label(__('trainings.schedule.days_of_week'))
                                     ->multiple()
                                     ->options([
-                                        0 => 'Sunday',
-                                        1 => 'Monday',
-                                        2 => 'Tuesday',
-                                        3 => 'Wednesday',
-                                        4 => 'Thursday',
-                                        5 => 'Friday',
-                                        6 => 'Saturday',
-                                    ])
-                                    ->helperText('Leave empty to use the same day as start date'),
+                                        0 => __('trainings.days.sunday'),
+                                        1 => __('trainings.days.monday'),
+                                        2 => __('trainings.days.tuesday'),
+                                        3 => __('trainings.days.wednesday'),
+                                        4 => __('trainings.days.thursday'),
+                                        5 => __('trainings.days.friday'),
+                                        6 => __('trainings.days.saturday'),
+                                    ]),
                             ]),
                     ]),
-                Section::make('Options')
+                Section::make(__('trainings.schedule.options'))
                     ->schema([
                         Toggle::make('copy_exercises')
-                            ->label('Copy Exercises')
+                            ->label(__('trainings.schedule.copy_exercises'))
                             ->default(true)
-                            ->helperText('Include all exercises with notes and order'),
+                            ->helperText(__('trainings.schedule.copy_exercises_description')),
                         Select::make('assign_to')
-                            ->label('Assign To')
+                            ->label(__('trainings.schedule.assign_to'))
                             ->multiple()
                             ->options(function () {
                                 $team = Filament::getTenant();
@@ -104,7 +103,7 @@ class ScheduleTrainingAction
                             })
                             ->searchable()
                             ->preload()
-                            ->helperText('Leave empty to keep original assignments'),
+                            ->helperText(__('trainings.schedule.assign_to_placeholder')),
                     ])
                     ->collapsible(),
             ])
@@ -115,7 +114,7 @@ class ScheduleTrainingAction
 
                 if (empty($dates)) {
                     Notification::make()
-                        ->title('No dates selected')
+                        ->title(__('app.messages.error'))
                         ->warning()
                         ->send();
 
@@ -136,7 +135,7 @@ class ScheduleTrainingAction
                     );
 
                     Notification::make()
-                        ->title('Training scheduled')
+                        ->title(__('trainings.notifications.scheduled'))
                         ->success()
                         ->send();
 
@@ -152,7 +151,7 @@ class ScheduleTrainingAction
                 );
 
                 Notification::make()
-                    ->title("Created {$createdCount} training(s)")
+                    ->title(__('trainings.notifications.created_count', ['count' => $createdCount]))
                     ->success()
                     ->send();
             })

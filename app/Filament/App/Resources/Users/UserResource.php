@@ -23,11 +23,24 @@ class UserResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static ?string $navigationLabel = 'Team Members';
-
     protected static ?int $navigationSort = 30;
 
     protected static ?string $tenantOwnershipRelationshipName = 'teams';
+
+    public static function getModelLabel(): string
+    {
+        return __('users.resource.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('users.resource.plural_label');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('users.resource.navigation_label');
+    }
 
     public static function form(Schema $schema): Schema
     {
