@@ -1,7 +1,7 @@
 ## Filament Rules
  
 - When generating Filament resource, you MUST generate Filament smoke tests to check if the Resource works. When making changes to Filament resource, you MUST run the tests (generate them if they don't exist) and make changes to resource/tests to make the tests pass.
-- When generating Filament resource, don't generate View page or Infolist, unless specifically instructed.
+- When generating Filament resource, generate View page or Infolist, when it makes sense. Ask if not sure when-to.
 - When referencing the Filament routes, aim to use `getUrl()` instead of Laravel `route()`. Instead of `route('filament.admin.resources.class-schedules.index')`, use `ClassScheduleResource::getUrl('index')`. Also, specify the exacy Resource name, instead of `getResource()`.
 - When writing tests with Pest, use syntax `Livewire::test(class)` and not `livewire(class)`, to avoid extra dependency on `pestphp/pest-plugin-livewire`.
 - When using Enum class for Eloquent Model field, add Enum `HasLabel`, `HasColor` and `HasIcon` interfaces if aren't added yet instead of specifying values/labels/colors/icons inside of Filament Forms/Tables. **CRITICAL**: Always use the exact return type declarations from the interface definitions - do NOT substitute specific types (e.g., use `string|BackedEnum|Htmlable|null` for `getIcon()`, not `string|Heroicon|null`). When defining a default using enum never add `->value`. Refer to this docs page: https://filamentphp.com/docs/4.x/advanced/enums
@@ -10,3 +10,28 @@
 - When adding actions that require authorization, use the `->authorize('ability')` method on the action instead of manually calling `Gate::authorize()` or checking `Gate::allows()`. The `authorize()` method handles both authorization enforcement and action visibility automatically.
 - In Filament v4, validation rule `unique()` has `ignoreRecord: true` by default, no need to specify it.
 - In Filament v4, if you create custom Blade files with Tailwind classes, you need to create a custom theme and specify the folder of those Blade files in theme.css.
+
+## Relation Managers (BelongsToMany with Pivot Data)
+
+- The `form()` method in a RelationManager defines fields for creating/editing the **related model**, not pivot data.
+- For **pivot attributes** in AttachAction, use `->schema()` not `->form()`:
+  ```php
+  AttachAction::make()
+      ->schema(fn (AttachAction $action): array => [
+          $action->getRecordSelect(),
+          Forms\Components\TextInput::make('notes'),  // pivot field
+          Forms\Components\TextInput::make('sort_order')->numeric(),  // pivot field
+      ])
+  ```
+- Ensure pivot attributes are in `withPivot()` on **both** the relationship and its inverse.
+- For sorting by pivot columns, use actual table name: `->defaultSort('pivot_table.column', 'asc')` NOT `->defaultSort('pivot.column')` which generates invalid SQL.
+- For reorderable pivot tables, override `reorderTable()` method to update pivot:
+  ```php
+  public function reorderTable(array $order, string|int|null $draggedRecordKey = null): void
+  {
+      foreach ($order as $index => $recordKey) {
+          $this->getOwnerRecord()->relationship()->updateExistingPivot($recordKey, ['sort_order' => $index]);
+      }
+  }
+  ```
+- Display pivot data in columns: `TextColumn::make('pivot.column_name')` (but NOT sortable on pivot columns).

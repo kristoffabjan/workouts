@@ -706,31 +706,74 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ---
 
-## Milestone 10: Dashboard & Overview
+## Milestone 10: Dashboard & Overview ✅
 
 **Goal**: Create dashboard with relevant information for each role.
 
 ### Tasks
 
-- [ ] Create dashboard widgets for Clients
-  - Upcoming trainings (next 7 days)
-  - Training completion stats (this week/month)
-  - Recent feedback submitted
-- [ ] Create dashboard widgets for Coaches
-  - Assigned trainings overview (pending/completed)
-  - Recent client completions with feedback
-  - Clients with overdue trainings
-- [ ] Create dashboard widgets for Admins
-  - Team statistics (users, trainings, exercises)
-  - Activity feed (recent trainings created/completed)
-- [ ] Configure Filament dashboard
-  - Role-based widget display
-  - Refresh data with Livewire polling (optional)
-- [ ] Test: View dashboard as each role, verify relevant data
+- [x] Remove calendar widget from default Filament dashboard, keep it only in Calendar page.
+  - Calendar widget was already only on the Calendar page, not on default dashboard
+- [x] Create dashboard widgets for Clients
+  - `ClientStatsWidget`: Training completion stats (this week/month/year/total)
+  - `UpcomingTrainingsWidget`: Upcoming trainings (configurable via `config/workouts.php`, default 3 days)
+  - `PendingFeedbackWidget`: List of past trainings awaiting feedback
+  - `RecentFeedbackWidget`: Recent feedback submitted by client
+- [x] Create dashboard widgets for Coaches
+  - `CoachStatsWidget`: Basic stats (total trainings, scheduled, completed, team members, exercises)
+  - `RecentCompletionsWidget`: Recent client completions with feedback
+- [x] Create dashboard widgets for Admins
+  - `AdminStatsWidget`: Global statistics (teams, users, trainings, exercises)
+  - `RecentActivityWidget`: Recent trainings from all teams
+- [x] Configure Filament dashboard
+  - Role-based widget display via `canView()` method on each widget
+  - Removed `FilamentInfoWidget` from both panels
+- [x] Tests: 29 passing tests for dashboard functionality
 
-**Deliverable**: Role-specific dashboards with useful widgets
+**Deliverable**: ✅ Role-specific dashboards with useful widgets
 
 ---
+## Milestone 10.1: Homepage ✅
+**Goal**: Create a landing page/dashboard for route / showing basic info and navigation options.
+
+### Tasks
+- [x] Create a new view `resources/views/home.blade.php` for the homepage
+  - Show basic info about the application (app name, tagline, feature highlights)
+  - Provide navigation links to Admin panel (/admin) and App panel (/app)
+  - Show login buttons for both panels with icons and descriptions
+- [x] Update web routes to use `Route::view('/', 'home')` (following guidelines - no controller needed for simple view)
+- [x] Clean up old `welcome.blade.php` file
+
+**Deliverable**: ✅ Enhanced landing page with branding, feature overview, and login navigation  
+
+---
+
+## Milestone 10.2: Info pages
+**Goal**: Create static info pages for Terms of Service and Privacy Policy and feature pages
+### Tasks
+- [ ] Create new views:
+  - `resources/views/terms.blade.php` for Terms of Service
+  - `resources/views/privacy.blade.php` for Privacy Policy
+  - `resources/views/features.blade.php` for Features overview, add detailed description of app features
+- [ ] Update web routes to serve these pages:
+  - `Route::view('/terms', 'terms')`
+  - `Route::view('/privacy', 'privacy')`
+  - `Route::view('/features', 'features')`
+- [ ] Add navigation links to these pages in the homepage and footer (if applicable)
+- [ ] Populate pages with placeholder text (to be replaced with actual legal content later)
+**Deliverable**: ✅ Static info pages accessible from homepage and footer
+
+## Milestone 10.2: Language Support
+**Goal**: Implement multi-language support for English and Slovenian languages.
+### Tasks
+- [ ] Add language files for English and Slovenian in `resources/lang/en` and `resources/lang/sl` respectively.
+- [ ] Translate all Filament resources, models, policies, notifications, and UI elements.
+- [ ] Implement language switcher in Filament panels (both Admin and App panels)
+    - https://filamentphp.com/plugins/bezhansalleh-language-switch, version 4
+- [ ] Test: Switch languages in both panels, verify translations
+
+**Deliverable**: Fully localized application with English and Slovenian support
+
 
 ## Milestone 11: Policies & Authorization
 
@@ -768,6 +811,12 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 ### Tasks
 
+- [ ] Athlete can't submit feedback for training more than 3 days after scheduled date.
+- [ ] Training is marked as missed if not marked as completed within 3 days after scheduled date.
+- [ ] Prevent scheduling training in the past.
+- [ ] Prevent assigning training to users not in the current team.
+- [ ] Prevent deleting exercises that are attached to existing trainings.
+- [ ] Prevent deleting users who have created trainings or exercises (require transfer of ownership or soft delete).
 - [ ] Add form validation rules
   - Training: title required, scheduled_date in future for new trainings
   - Exercise: name required, video_urls must be valid URLs

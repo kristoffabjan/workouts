@@ -14,5 +14,8 @@
 - Don't create Controllers with just one method which just returns `view()`. Instead, use `Route::view()` with Blade file directly.
 - Always use Laravel's @session() directive instead of @if(session()) for displaying flash messages in Blade templates.
 - In Blade files always use `@selected()` and `@checked()` directives instead of `selected` and `checked` HTML attributes. Good example: @selected(old('status') === App\Enums\ProjectStatus::Pending->value). Bad example: {{ old('status') === App\Enums\ProjectStatus::Pending->value ? 'selected' : '' }}.
- 
+- Database migrations until said so: always use `php artisan migrate:fresh --seed` to ensure a clean database state with seeded data. Avoid using `migrate:refresh` as it may leave residual data. On migration errors, inspect the migration files for issues. Be careful with order of migrations and foreign key constraints.
+- Until further notice, always update existing model tables and avoid creating new migrations for new columns if the project is still in early stages and database schema is rapidly evolving. In those cases, run `php artisan migrate:fresh --seed` after updating models.
+- For each new Eloquent Model created, always generate a corresponding Factory and Seeder class, that is used on database seeding.
+- During db migrations, ask additional questions if there are some ambiguous columns, relations, or constraints that need clarification.
 ---

@@ -52,6 +52,8 @@ The initial implementation focuses on enabling a coach or individual athlete to:
 - View personal training calendar
 - Cannot create or modify training programs
 - Cannot access other clients' data
+- Is able to interact in app as individual, so outside of team.
+
 
 ### 2.2 Multi-Team Support
 
@@ -60,6 +62,9 @@ The initial implementation focuses on enabling a coach or individual athlete to:
 - Email addresses are unique per user (not per team)
 - Role-based permissions are enforced at the team level using Laravel policies
 - All data (trainings, exercises, schedules) are team-scoped
+
+### 2.3 Onboarding new Users
+-  Admin or team admin can invitine user in app into team, or to certain team as team admin, which will create user that belong to team, or individual user. New user would receive email with change password invitation.
 
 ---
 
