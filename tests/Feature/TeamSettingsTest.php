@@ -155,3 +155,65 @@ describe('TeamSettings Permissions', function () {
         expect($component->instance()->canEditSettings())->toBeFalse();
     });
 });
+
+describe('Personal Team Settings', function () {
+    beforeEach(function () {
+        $this->personalTeam = Team::factory()->create([
+            'name' => 'Personal Team',
+            'is_personal' => true,
+            'owner_id' => $this->coach->id,
+        ]);
+        $this->coach->teams()->attach($this->personalTeam, ['role' => TeamRole::Coach->value]);
+    });
+
+    it('allows access to personal team settings page', function () {
+        actingAs($this->coach)
+            ->get(TeamSettings::getUrl(tenant: $this->personalTeam))
+            ->assertSuccessful();
+    });
+
+    it('recognizes personal team', function () {
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->personalTeam);
+
+        $component = Livewire::test(TeamSettings::class);
+
+        expect($component->instance()->isPersonalTeam())->toBeTrue();
+    });
+
+    it('does not recognize organization team as personal', function () {
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->team);
+
+        $component = Livewire::test(TeamSettings::class);
+
+        expect($component->instance()->isPersonalTeam())->toBeFalse();
+    });
+
+    it('returns empty form schema for personal teams', function () {
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->personalTeam);
+
+        $component = Livewire::test(TeamSettings::class);
+
+        expect($component->instance()->data)->toBe([]);
+    });
+
+    it('does not allow leaving personal team', function () {
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->personalTeam);
+
+        $component = Livewire::test(TeamSettings::class);
+
+        expect($component->instance()->canLeaveTeam())->toBeFalse();
+    });
+
+    it('does not allow transferring ownership of personal team', function () {
+        $this->actingAs($this->coach);
+        Filament::setTenant($this->personalTeam);
+
+        $component = Livewire::test(TeamSettings::class);
+
+        expect($component->instance()->canTransferOwnership())->toBeFalse();
+    });
+});

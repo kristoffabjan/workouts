@@ -6,20 +6,36 @@
         $memberCount = $team->users()->count();
         $coachCount = $team->coaches()->count();
         $clientCount = $team->clients()->count();
+        $isPersonal = $team->is_personal;
     @endphp
 
-    {{-- Team Settings Form --}}
-    <form wire:submit="save">
-        {{ $this->form }}
+    @if($isPersonal)
+        {{-- Personal Team Info Banner --}}
+        <x-filament::section icon="heroicon-o-user" icon-color="primary">
+            <x-slot name="heading">
+                {{ __('settings.team.personal.heading') }}
+            </x-slot>
 
-        @if($this->canEditSettings())
-            <div class="mt-6 flex justify-end">
-                <x-filament::button type="submit" icon="heroicon-o-check">
-                    {{ __('app.actions.save') }}
-                </x-filament::button>
+            <div class="prose prose-sm dark:prose-invert max-w-none">
+                <p class="text-gray-600 dark:text-gray-400">
+                    {{ __('settings.team.personal.description') }}
+                </p>
             </div>
-        @endif
-    </form>
+        </x-filament::section>
+    @else
+        {{-- Team Settings Form --}}
+        <form wire:submit="save">
+            {{ $this->form }}
+
+            @if($this->canEditSettings())
+                <div class="mt-6 flex justify-end">
+                    <x-filament::button type="submit" icon="heroicon-o-check">
+                        {{ __('app.actions.save') }}
+                    </x-filament::button>
+                </div>
+            @endif
+        </form>
+    @endif
 
     <div class="grid gap-6 md:grid-cols-2 mt-6">
         {{-- Team Overview --}}

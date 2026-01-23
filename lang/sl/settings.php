@@ -25,5 +25,28 @@ return [
         'messages' => [
             'saved' => 'Nastavitve ekipe so bile uspešno shranjene.',
         ],
+        'personal' => [
+            'heading' => 'Osebni prostor',
+            'description' => 'To je vaš osebni prostor. Nastavitve osebne ekipe se upravljajo samodejno in jih ni mogoče prilagoditi. Uporabite spodnje razdelke za ogled informacij o vašem prostoru.',
+        ],
+    ],
+
+    'user' => [
+        'navigation_label' => 'Uporabniške nastavitve',
+        'title' => 'Uporabniške nastavitve',
+        'subheading' => 'Upravljanje osebnih nastavitev',
+        'fields' => [
+            'avatar' => 'Profilna slika',
+            'preferred_language' => 'Prednostni jezik',
+            'weight_unit' => 'Enota teže',
+        ],
+        'messages' => [
+            'saved' => 'Vaše nastavitve so bile uspešno shranjene.',
+        ],
+        'language_options' => [
+            'system' => 'Sistemske privzete',
+            'en' => 'English',
+            'sl' => 'Slovenščina',
+        ],
     ],
 ];

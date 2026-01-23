@@ -13,4 +13,9 @@ return [
         'skipped' => 'Izpuščeno',
         'missed' => 'Zamujeno',
     ],
+
+    'weight_unit' => [
+        'kg' => 'Kilogrami (kg)',
+        'lb' => 'Funti (lb)',
+    ],
 ];

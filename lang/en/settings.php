@@ -25,5 +25,28 @@ return [
         'messages' => [
             'saved' => 'Team settings saved successfully.',
         ],
+        'personal' => [
+            'heading' => 'Personal Workspace',
+            'description' => 'This is your personal workspace. Personal team settings are managed automatically and cannot be customized. Use the sections below to view your workspace information.',
+        ],
+    ],
+
+    'user' => [
+        'navigation_label' => 'User Settings',
+        'title' => 'User Settings',
+        'subheading' => 'Manage your personal preferences',
+        'fields' => [
+            'avatar' => 'Profile Photo',
+            'preferred_language' => 'Preferred Language',
+            'weight_unit' => 'Weight Unit',
+        ],
+        'messages' => [
+            'saved' => 'Your settings have been saved successfully.',
+        ],
+        'language_options' => [
+            'system' => 'System Default',
+            'en' => 'English',
+            'sl' => 'Slovenščina',
+        ],
     ],
 ];

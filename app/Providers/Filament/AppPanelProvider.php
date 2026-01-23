@@ -3,13 +3,14 @@
 namespace App\Providers\Filament;
 
 use App\Filament\App\Pages\Tenancy\RegisterTeam;
+use App\Filament\App\Pages\UserSettings;
 use App\Helpers\SettingsHelper;
 use App\Models\Team;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\MenuItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -48,7 +49,7 @@ class AppPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\Filament\App\Widgets')
             ->widgets([
-                //AccountWidget::class,
+                AccountWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -67,10 +68,16 @@ class AppPanelProvider extends PanelProvider
             ->tenantRegistration(RegisterTeam::class)
             ->searchableTenantMenu()
             ->tenantMenuItems([
-                'register' => MenuItem::make()
+                'register' => Action::make('register_team')
                     ->label('Register new team')
                     ->icon('heroicon-o-plus-circle')
                     ->url(fn (): string => route('filament.app.tenant.registration')),
+            ])
+            ->userMenuItems([
+                Action::make('user_settings')
+                    ->label(__('settings.user.navigation_label'))
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->url(fn (): string => UserSettings::getUrl()),
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->plugin(

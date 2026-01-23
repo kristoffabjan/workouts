@@ -50,6 +50,7 @@ class ManageApplicationSettings extends SettingsPage
                 FileUpload::make('application_logo')
                     ->label(__('settings.application.fields.application_logo'))
                     ->image()
+                    ->disk('public')
                     ->directory('logos')
                     ->visibility('public')
                     ->automaticallyResizeImagesMode('cover')

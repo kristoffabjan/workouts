@@ -19,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class TeamSettings extends Page
 {
@@ -43,17 +44,33 @@ class TeamSettings extends Page
     public function mount(): void
     {
         $team = $this->getTeam();
+
+        if ($team->is_personal) {
+            $this->form->fill([]);
+
+            return;
+        }
+
         $logo = $team->settings['logo'] ?? null;
 
-        $this->data = [
+        $this->form->fill([
             'name' => $team->name,
             'logo' => $logo ? [$logo] : [],
             'default_reminder_time' => $team->settings['default_reminder_time'] ?? '09:00',
-        ];
+        ]);
+    }
+
+    public function isPersonalTeam(): bool
+    {
+        return $this->getTeam()->is_personal;
     }
 
     public function form(Schema $schema): Schema
     {
+        if ($this->isPersonalTeam()) {
+            return $schema->components([])->statePath('data');
+        }
+
         return $schema
             ->components([
                 Section::make(__('settings.team.title'))
@@ -68,6 +85,8 @@ class TeamSettings extends Page
                         FileUpload::make('logo')
                             ->label(__('settings.team.fields.logo'))
                             ->image()
+                            ->avatar()
+                            ->disk('public')
                             ->directory('team-logos')
                             ->visibility('public')
                             ->automaticallyResizeImagesMode('cover')

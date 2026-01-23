@@ -16,7 +16,15 @@ class TeamFactory extends Factory
         return [
             'name' => $name,
             'slug' => str()->slug($name),
+            'is_personal' => false,
             'settings' => null,
         ];
+    }
+
+    public function personal(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_personal' => true,
+        ]);
     }
 }

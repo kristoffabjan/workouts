@@ -1048,8 +1048,8 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
     - Application name/logo in headers (home page, panel branding)
     - Default language for calendar plugin
     - Timezone for calendar plugin
-- [ ] Hide team settings for personal teams(is_personal = true) 
-- [ ] Include user settings, User model,  https://filamentphp.com/docs/4.x/navigation/user-menu
+- [x] Hide team settings for personal teams(is_personal = true) 
+- [x] Include user settings, User model,  https://filamentphp.com/docs/4.x/navigation/user-menu
   - Settings: Preferred Language, logo
 - [x] Tests: 26 passing tests for settings functionality (exceeded target of 15)
 

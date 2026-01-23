@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\TeamRole;
+use App\Enums\WeightUnit;
 use App\Observers\UserObserver;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -15,11 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 #[ObservedBy([UserObserver::class])]
-class User extends Authenticatable implements FilamentUser, HasTenants
+class User extends Authenticatable implements FilamentUser, HasAvatar, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
@@ -29,6 +32,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'email',
         'password',
         'is_admin',
+        'settings',
     ];
 
     protected $hidden = [
@@ -44,6 +48,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'settings' => 'array',
         ];
     }
 
@@ -131,5 +136,40 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    public function getPreferredLanguage(): ?string
+    {
+        return $this->settings['preferred_language'] ?? null;
+    }
+
+    public function getWeightUnit(): WeightUnit
+    {
+        $value = $this->settings['weight_unit'] ?? WeightUnit::Kg->value;
+
+        return WeightUnit::from($value);
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->settings['avatar'] ?? null;
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        $avatar = $this->getAvatar();
+
+        if (! $avatar) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($avatar);
+    }
+
+    public function updateSettings(array $settings): void
+    {
+        $this->update([
+            'settings' => array_merge($this->settings ?? [], $settings),
+        ]);
     }
 }
