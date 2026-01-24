@@ -35,13 +35,19 @@ return [
         'navigation_label' => 'User Settings',
         'title' => 'User Settings',
         'subheading' => 'Manage your personal preferences',
+        'security_section' => 'Security',
+        'security_description' => 'Update your password to keep your account secure',
         'fields' => [
             'avatar' => 'Profile Photo',
             'preferred_language' => 'Preferred Language',
             'weight_unit' => 'Weight Unit',
+            'current_password' => 'Current Password',
+            'new_password' => 'New Password',
+            'confirm_password' => 'Confirm Password',
         ],
         'messages' => [
             'saved' => 'Your settings have been saved successfully.',
+            'password_changed' => 'Your password has been changed successfully.',
         ],
         'language_options' => [
             'system' => 'System Default',

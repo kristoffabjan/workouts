@@ -7,6 +7,7 @@ use App\Filament\App\Pages\UserSettings;
 use App\Helpers\SettingsHelper;
 use App\Models\Team;
 use Filament\Actions\Action;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -15,7 +16,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Enums\ThemeMode;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -35,6 +35,7 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login()
+            ->passwordReset()
             ->brandName(fn (): string => SettingsHelper::getApplicationName())
             ->brandLogo(fn (): ?string => ($logo = SettingsHelper::getApplicationLogo()) ? Storage::url($logo) : null)
             ->brandLogoHeight('2rem')
@@ -47,7 +48,7 @@ class AppPanelProvider extends PanelProvider
             ])
             ->defaultThemeMode(ThemeMode::Dark)
             ->databaseNotifications()
-            ->font("Space Grotesk")
+            ->font('Space Grotesk')
             ->tenant(Team::class, slugAttribute: 'slug')
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
@@ -72,13 +73,19 @@ class AppPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            //->tenantRegistration(RegisterTeam::class)
+            // ->tenantRegistration(RegisterTeam::class)
             ->searchableTenantMenu()
             ->tenantMenuItems([
                 /* 'register' => Action::make('register_team')
                     ->label('Register new team')
                     ->icon('heroicon-o-plus-circle')
                     ->url(fn (): string => route('filament.app.tenant.registration')), */
+            ])
+            ->userMenuItems([
+                Action::make('user_settings')
+                    ->label(__('settings.user.navigation_label'))
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->url(fn (): string => UserSettings::getUrl()),
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->plugin(

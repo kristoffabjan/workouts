@@ -6,13 +6,15 @@ use App\Enums\WeightUnit;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserSettings extends Page
 {
@@ -82,6 +84,33 @@ class UserSettings extends Page
                             ->default(WeightUnit::Kg),
                     ])
                     ->columns(1),
+
+                Section::make(__('settings.user.security_section'))
+                    ->description(__('settings.user.security_description'))
+                    ->schema([
+                        TextInput::make('current_password')
+                            ->label(__('settings.user.fields.current_password'))
+                            ->password()
+                            ->revealable()
+                            ->autocomplete('current-password')
+                            ->requiredWith('password')
+                            ->currentPassword(),
+
+                        TextInput::make('password')
+                            ->label(__('settings.user.fields.new_password'))
+                            ->password()
+                            ->revealable()
+                            ->autocomplete('new-password')
+                            ->confirmed()
+                            ->rules([Password::default()]),
+
+                        TextInput::make('password_confirmation')
+                            ->label(__('settings.user.fields.confirm_password'))
+                            ->password()
+                            ->revealable()
+                            ->autocomplete('new-password'),
+                    ])
+                    ->columns(1),
             ])
             ->statePath('data');
     }
@@ -99,9 +128,26 @@ class UserSettings extends Page
             'weight_unit' => $data['weight_unit'],
         ]);
 
+        $passwordChanged = false;
+        if (! empty($data['password'])) {
+            $user->update([
+                'password' => Hash::make($data['password']),
+            ]);
+            $passwordChanged = true;
+
+            $this->form->fill([
+                'avatar' => $avatarValue ? [$avatarValue] : [],
+                'preferred_language' => $data['preferred_language'] ?: null,
+                'weight_unit' => $data['weight_unit'],
+                'current_password' => null,
+                'password' => null,
+                'password_confirmation' => null,
+            ]);
+        }
+
         Notification::make()
             ->success()
-            ->title(__('settings.user.messages.saved'))
+            ->title($passwordChanged ? __('settings.user.messages.password_changed') : __('settings.user.messages.saved'))
             ->send();
     }
 }

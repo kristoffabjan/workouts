@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Helpers\SettingsHelper;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,7 +12,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Enums\ThemeMode;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -29,11 +29,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset()
             ->brandName(fn (): string => SettingsHelper::getApplicationName().' Admin')
             ->brandLogo(fn (): ?string => ($logo = SettingsHelper::getApplicationLogo()) ? Storage::url($logo) : null)
             ->brandLogoHeight('2rem')
             ->colors([
-                'primary' => Color::hex('#E5A823'),
+                'primary' => Color::hex('#FA6868'),
                 'danger' => Color::hex('#FA6868'),
                 'warning' => Color::hex('#FAAC68'),
                 'info' => Color::hex('#FACE68'),
@@ -51,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
             ])
-            ->font("Space Grotesk")
+            ->font('Space Grotesk')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

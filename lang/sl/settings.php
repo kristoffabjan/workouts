@@ -35,13 +35,19 @@ return [
         'navigation_label' => 'Uporabniške nastavitve',
         'title' => 'Uporabniške nastavitve',
         'subheading' => 'Upravljanje osebnih nastavitev',
+        'security_section' => 'Varnost',
+        'security_description' => 'Posodobite geslo za varnost vašega računa',
         'fields' => [
             'avatar' => 'Profilna slika',
             'preferred_language' => 'Prednostni jezik',
             'weight_unit' => 'Enota teže',
+            'current_password' => 'Trenutno geslo',
+            'new_password' => 'Novo geslo',
+            'confirm_password' => 'Potrdite geslo',
         ],
         'messages' => [
             'saved' => 'Vaše nastavitve so bile uspešno shranjene.',
+            'password_changed' => 'Vaše geslo je bilo uspešno spremenjeno.',
         ],
         'language_options' => [
             'system' => 'Sistemske privzete',

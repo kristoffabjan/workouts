@@ -18,4 +18,10 @@ return [
         'kg' => 'Kilograms (kg)',
         'lb' => 'Pounds (lb)',
     ],
+
+    'access_request_status' => [
+        'pending' => 'Pending',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+    ],
 ];

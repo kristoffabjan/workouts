@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use BezhanSalleh\LanguageSwitch\Enums\Placement;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Filament\Support\Facades\FilamentView;
@@ -44,7 +45,15 @@ class AppServiceProvider extends ServiceProvider
                     'en' => 'English',
                     'sl' => 'Slovenščina',
                 ])
-                ->circular();
+                ->circular()
+                ->visible(insidePanels: true, outsidePanels: true)
+                ->outsidePanelRoutes([
+                    'filament.app.auth.login',
+                    'filament.admin.auth.login',
+                    'filament.app.auth.password-reset.request',
+                    'filament.admin.auth.password-reset.request',
+                ])
+                ->outsidePanelPlacement(Placement::TopRight);
         });
     }
 

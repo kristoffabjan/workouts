@@ -18,4 +18,10 @@ return [
         'kg' => 'Kilogrami (kg)',
         'lb' => 'Funti (lb)',
     ],
+
+    'access_request_status' => [
+        'pending' => 'V čakanju',
+        'approved' => 'Odobreno',
+        'rejected' => 'Zavrnjeno',
+    ],
 ];

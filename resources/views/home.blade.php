@@ -42,28 +42,22 @@
                     Create, schedule, and manage workout programs. Track training completion and gather feedback from your athletes.
                 </p>
 
-                <div class="grid sm:grid-cols-2 gap-6 mb-16 max-w-2xl mx-auto">
+                <div class="flex flex-col items-center gap-6 mb-16 max-w-md mx-auto">
                     <a href="{{ route('filament.app.auth.login') }}"
-                       class="group relative flex flex-col items-center p-6 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-[#5A9CB5] dark:hover:border-[#5A9CB5] transition-colors duration-200">
+                       class="w-full group relative flex flex-col items-center p-6 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-[#5A9CB5] dark:hover:border-[#5A9CB5] transition-colors duration-200">
                         <div class="flex items-center justify-center w-12 h-12 bg-[#5A9CB5]/10 dark:bg-[#5A9CB5]/20 rounded-lg mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-[#5A9CB5]">
                                 <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <h2 class="text-lg font-semibold text-zinc-900 dark:text-white mb-2">User Login</h2>
+                        <h2 class="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Login</h2>
                         <p class="text-sm text-zinc-500 dark:text-zinc-400">For coaches and athletes</p>
                     </a>
 
-                    <a href="{{ route('filament.admin.auth.login') }}"
-                       class="group relative flex flex-col items-center p-6 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors duration-200">
-                        <div class="flex items-center justify-center w-12 h-12 bg-zinc-100 dark:bg-zinc-700 rounded-lg mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-zinc-600 dark:text-zinc-400">
-                                <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 0 1 6.775-5.025.75.75 0 0 1 .313 1.248l-3.32 3.319c.063.475.276.934.641 1.299.365.365.824.578 1.3.64l3.318-3.319a.75.75 0 0 1 1.248.313 5.25 5.25 0 0 1-5.472 6.756c-1.018-.086-1.87.1-2.309.634L7.344 21.3A3.298 3.298 0 1 1 2.7 16.657l8.684-7.151c.533-.44.72-1.291.634-2.309A5.342 5.342 0 0 1 12 6.75ZM4.117 19.125a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <h2 class="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Admin Login</h2>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400">System administration</p>
-                    </a>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                        Don't have an account?
+                        <a href="{{ route('request-access') }}" class="font-medium text-[#5A9CB5] hover:text-[#4A8CA5] transition-colors">Request Access</a>
+                    </p>
                 </div>
 
                 <div class="border-t border-zinc-200 dark:border-zinc-700 pt-12">

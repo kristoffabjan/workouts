@@ -1009,11 +1009,6 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
   - Training workflow
   - Exercise library usage
   - Calendar usage
-- [ ] Create `CLAUDE.md` with context for Claude Code
-  - Project structure
-  - Key conventions
-  - Common tasks and commands
-  - File organization
 - [ ] Create deployment guide (future use)
   - Production environment requirements
   - Environment variables
@@ -1055,22 +1050,36 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 
 -----
 
-## Milestone 18: User profile login enhancements
+## Milestone 18: User profile login enhancements ✅
 **Goal**: Improve user profile management and login experience.
 ### Tasks
-- [ ] Crete flow for forgot password and reset password
-  - Use Filament auth features
-- [ ] Reuse user settings from milestone 17
-  - Preferred language
-  - Profile picture upload
-  - [ ]  Add form for password change
-- [ ] Update login/register forms to include language selection
-- [ ] Add form for requesting app access
-  - New page with form to request access
-  - Sends notification to system admin
-  - FE and BE validation
-  - Rate limiting to prevent spam
-- [ ] Tests: at least 15 passing tests for user profile and login enhancements
+- Use standard Filament and laravel auth features
+- [x] Create flow for forgot password and reset password
+  - Enabled `->passwordReset()` in both AppPanelProvider and AdminPanelProvider
+  - Filament's built-in password reset integrates with Laravel's password reset
+- [x] Reuse user settings from milestone 17
+  - Preferred language, profile picture upload already in UserSettings page
+  - [x] Add security section for password change in UserSettings page
+    - Added current password, new password, confirm password fields
+    - Uses Filament's `requiredWith()`, `currentPassword()`, and `confirmed()` validation
+    - Clears password fields after successful change
+- [x] Update login forms to include language selection
+  - Configured LanguageSwitch to be visible on login and password reset pages
+  - Added `outsidePanelRoutes` for filament.app.auth.login, filament.admin.auth.login, password-reset pages
+  - Language switcher positioned in top-right corner
+- [x] Add form for requesting app access
+  - Created `AccessRequest` model with status enum (Pending, Approved, Rejected)
+  - Created `RequestAccess` Livewire component with form validation
+  - Created `AccessRequestNotification` for mail + database notifications
+  - Added rate limiting (3 requests per hour per IP)
+  - Added link to request access on login footer
+  - Created `AccessRequestResource` in Admin panel for managing requests
+    - Approve/Reject actions with timestamps and processed_by tracking
+- [x] Tests: 37 passing tests for user profile and login enhancements
+  - PasswordResetFilamentTest: 6 tests
+  - UserSettingsPasswordTest: 7 tests
+  - RequestAccessTest: 20 tests
+  - LanguageSwitchLoginTest: 4 tests
 
 
 ---
@@ -1090,6 +1099,14 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 - [x] Updated features page colors
 - [x] Rebuilt frontend assets 
 
+
+----
+
+## Milestone 20: Small fixes and improvements
+**Goal**: Address minor issues and enhance user experience.
+### Tasks
+- [ ] Remove Recent Client Completions widget from personal teams(is_personal = true) and only show in teams where user is coach
+- [ ] On training creation and duplication, allow trainings being made with minute accuracy, not second accuracy (set seconds to 0)
 
 ## Disk setup
 **Goal**: Configure file storage for application assets.

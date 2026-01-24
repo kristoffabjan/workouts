@@ -19,4 +19,15 @@ return [
         'individual_greeting' => 'Povabljeni ste bili v aplikacijo Workouts.',
         'individual_button' => 'Sprejmi povabilo',
     ],
+
+    'access_request' => [
+        'subject' => 'Nova zahteva za dostop',
+        'greeting' => 'Pozdravljeni Administrator!',
+        'line' => 'Nova zahteva za dostop je bila poslana od **:name** (:email).',
+        'message_label' => 'Sporočilo',
+        'action' => 'Poglej zahteve za dostop',
+        'footer' => 'Prosimo, preglejte in odgovorite na to zahtevo.',
+        'database_title' => 'Nova zahteva za dostop',
+        'database_body' => ':name (:email) je zahteval dostop.',
+    ],
 ];
