@@ -72,19 +72,13 @@ class AppPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->tenantRegistration(RegisterTeam::class)
+            //->tenantRegistration(RegisterTeam::class)
             ->searchableTenantMenu()
             ->tenantMenuItems([
-                'register' => Action::make('register_team')
+                /* 'register' => Action::make('register_team')
                     ->label('Register new team')
                     ->icon('heroicon-o-plus-circle')
-                    ->url(fn (): string => route('filament.app.tenant.registration')),
-            ])
-            ->userMenuItems([
-                Action::make('user_settings')
-                    ->label(__('settings.user.navigation_label'))
-                    ->icon('heroicon-o-cog-6-tooth')
-                    ->url(fn (): string => UserSettings::getUrl()),
+                    ->url(fn (): string => route('filament.app.tenant.registration')), */
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->plugin(
