@@ -37,9 +37,15 @@ return [
     'library' => [
         'title' => 'Add Exercises from Library',
         'description' => 'Select exercises from the global library to add to your team.',
+        'select_label' => 'Select exercises from the global library',
         'select_exercises' => 'Select Exercises',
+        'helper_text' => 'Search by name or tag. Exercises with the same name already in your team will be skipped.',
         'success' => 'Added :count exercise(s) to your library',
         'no_exercises' => 'No new exercises available',
+        'added_title' => 'Exercises added',
+        'added_body' => ':count exercise(s) added to your team.',
+        'none_added_title' => 'No exercises added',
+        'none_added_body' => 'Selected exercises already exist in your team.',
     ],
 
     'tags' => [

@@ -89,4 +89,17 @@ return [
         'cannot_edit_past_training' => 'You cannot edit a training that has already been scheduled in the past.',
         'cannot_assign_past_training' => 'You cannot assign users to a training that has already been scheduled in the past.',
     ],
+
+    'calendar' => [
+        'navigation_label' => 'Calendar',
+        'title' => 'Training Calendar',
+        'legend' => [
+            'draft' => 'Draft',
+            'scheduled' => 'Scheduled',
+            'completed' => 'Completed',
+            'skipped' => 'Skipped',
+        ],
+        'coach_description' => 'Viewing all team trainings. Click on a training to view details.',
+        'client_description' => 'Viewing your assigned trainings. Click on a training to view details.',
+    ],
 ];

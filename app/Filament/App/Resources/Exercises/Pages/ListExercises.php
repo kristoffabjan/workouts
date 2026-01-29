@@ -21,17 +21,17 @@ class ListExercises extends ListRecords
     {
         return [
             Action::make('addFromLibrary')
-                ->label('Add from Library')
+                ->label(__('exercises.actions.add_from_library'))
                 ->icon(Heroicon::OutlinedSquare2Stack)
                 ->color('gray')
                 ->form([
                     Select::make('exercises')
-                        ->label('Select exercises from the global library')
+                        ->label(__('exercises.library.select_label'))
                         ->options(fn () => $this->getGlobalExerciseOptions())
                         ->searchable()
                         ->multiple()
                         ->required()
-                        ->helperText('Search by name or tag. Exercises with the same name already in your team will be skipped.'),
+                        ->helperText(__('exercises.library.helper_text')),
                 ])
                 ->action(function (array $data, ExerciseLibraryService $service) {
                     $team = Filament::getTenant();
@@ -44,14 +44,14 @@ class ListExercises extends ListRecords
                     if ($copiedCount > 0) {
                         Notification::make()
                             ->success()
-                            ->title('Exercises added')
-                            ->body("{$copiedCount} exercise(s) added to your team.")
+                            ->title(__('exercises.library.added_title'))
+                            ->body(__('exercises.library.added_body', ['count' => $copiedCount]))
                             ->send();
                     } else {
                         Notification::make()
                             ->warning()
-                            ->title('No exercises added')
-                            ->body('Selected exercises already exist in your team.')
+                            ->title(__('exercises.library.none_added_title'))
+                            ->body(__('exercises.library.none_added_body'))
                             ->send();
                     }
                 }),

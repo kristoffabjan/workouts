@@ -37,9 +37,15 @@ return [
     'library' => [
         'title' => 'Dodaj vaje iz knjižnice',
         'description' => 'Izberi vaje iz globalne knjižnice za dodajanje v ekipo.',
+        'select_label' => 'Izberi vaje iz globalne knjižnice',
         'select_exercises' => 'Izberi vaje',
+        'helper_text' => 'Išči po imenu ali oznaki. Vaje z enakim imenom, ki že obstajajo v vaši ekipi, bodo preskočene.',
         'success' => 'Dodanih :count vaj v knjižnico',
         'no_exercises' => 'Ni novih vaj na voljo',
+        'added_title' => 'Vaje dodane',
+        'added_body' => ':count vaj dodanih v vašo ekipo.',
+        'none_added_title' => 'Nobena vaja ni bila dodana',
+        'none_added_body' => 'Izbrane vaje že obstajajo v vaši ekipi.',
     ],
 
     'tags' => [

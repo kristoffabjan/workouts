@@ -21,8 +21,8 @@
                     <span class="text-xl font-semibold text-zinc-900 dark:text-white">{{ config('app.name', 'Workouts') }}</span>
                 </a>
                 <nav class="flex items-center gap-4">
-                    <a href="{{ route('features') }}" class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">Features</a>
-                    <a href="{{ route('filament.app.auth.login') }}" class="text-sm font-medium text-[#5A9CB5] hover:text-[#4A8CA5] transition-colors">Login</a>
+                    <a href="{{ route('features') }}" class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">{{ __('pages.common.features') }}</a>
+                    <a href="{{ route('filament.app.auth.login') }}" class="text-sm font-medium text-[#5A9CB5] hover:text-[#4A8CA5] transition-colors">{{ __('pages.common.login') }}</a>
                 </nav>
             </div>
         </header>
@@ -34,12 +34,12 @@
         <footer class="py-6 px-4 sm:px-6 lg:px-8 border-t border-zinc-200 dark:border-zinc-700">
             <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="text-sm text-zinc-500 dark:text-zinc-400">
-                    &copy; {{ date('Y') }} {{ config('app.name', 'Workouts') }}. All rights reserved.
+                    &copy; {{ date('Y') }} {{ config('app.name', 'Workouts') }}. {{ __('pages.home.copyright') }}
                 </div>
                 <nav class="flex items-center gap-6 text-sm text-zinc-500 dark:text-zinc-400">
-                    <a href="{{ route('features') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">Features</a>
-                    <a href="{{ route('terms') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">Terms</a>
-                    <a href="{{ route('privacy') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacy</a>
+                    <a href="{{ route('features') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">{{ __('pages.common.features') }}</a>
+                    <a href="{{ route('terms') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">{{ __('pages.common.terms') }}</a>
+                    <a href="{{ route('privacy') }}" class="hover:text-zinc-900 dark:hover:text-white transition-colors">{{ __('pages.common.privacy') }}</a>
                 </nav>
             </div>
         </footer>

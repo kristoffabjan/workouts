@@ -11,13 +11,19 @@ class Calendar extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    protected static ?string $navigationLabel = 'Calendar';
-
-    protected static ?string $title = 'Training Calendar';
-
     protected static ?int $navigationSort = 10;
 
     protected string $view = 'filament.app.pages.calendar';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('trainings.calendar.navigation_label');
+    }
+
+    public function getTitle(): string
+    {
+        return __('trainings.calendar.title');
+    }
 
     protected function getFooterWidgets(): array
     {

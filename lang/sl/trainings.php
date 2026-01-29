@@ -89,4 +89,17 @@ return [
         'cannot_edit_past_training' => 'Ne morete urejati treninga, ki je bil že načrtovan v preteklosti.',
         'cannot_assign_past_training' => 'Ne morete dodeljevati uporabnikov treningu, ki je bil že načrtovan v preteklosti.',
     ],
+
+    'calendar' => [
+        'navigation_label' => 'Koledar',
+        'title' => 'Koledar treningov',
+        'legend' => [
+            'draft' => 'Osnutek',
+            'scheduled' => 'Načrtovano',
+            'completed' => 'Zaključeno',
+            'skipped' => 'Preskočeno',
+        ],
+        'coach_description' => 'Ogled vseh ekipnih treningov. Kliknite na trening za ogled podrobnosti.',
+        'client_description' => 'Ogled vaših dodeljenih treningov. Kliknite na trening za ogled podrobnosti.',
+    ],
 ];
