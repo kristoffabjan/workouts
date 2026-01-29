@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (copied from builder stage)
+vendor
+
+# Node
+node_modules
+
+# Environment files (use Docker env vars instead)
+.env
+.env.*
+!.env.example
+
+# Storage contents (keep structure, exclude contents)
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Keep .gitignore files in storage (preserves directory structure)
+!storage/app/.gitignore
+!storage/framework/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/logs/.gitignore
+
+# Cache and compiled files
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
+
+# Development/CI files
+.docker
+docker-compose*.yml
+Dockerfile*
+.editorconfig
+.styleci.yml
+phpunit.xml
+.phpunit.result.cache
+tests
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

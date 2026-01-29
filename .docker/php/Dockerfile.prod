@@ -1,0 +1,93 @@
+# ============================================
+# STAGE 1: Builder (install dependencies)
+# ============================================
+FROM php:8.4-fpm-alpine3.22 AS builder
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# Copy composer files
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
+
+# ============================================
+# STAGE 2: Production (final image)
+# ============================================
+FROM php:8.4-fpm-alpine3.22 AS production
+
+# Install system dependencies (Alpine package names)
+# Split into: build deps (only needed for compiling) and runtime deps (needed to run)
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        linux-headers \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
+        oniguruma-dev \
+        libxml2-dev \
+        libzip-dev \
+        icu-dev \
+    # Runtime deps (kept in final image)
+    && apk add --no-cache \
+        libpng \
+        libjpeg-turbo \
+        freetype \
+        oniguruma \
+        libxml2 \
+        libzip \
+        icu-libs \
+        curl \
+    # Configure and install GD
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    # Install other PHP extensions
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip opcache intl \
+    # Install Redis
+    && pecl install redis && docker-php-ext-enable redis \
+    # Remove build deps (no longer needed)
+    && apk del .build-deps
+
+# Configure opcache for production
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=16" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.save_comments=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.enable_file_override=1" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Configure PHP
+RUN echo "upload_max_filesize=100M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/memory.ini
+
+WORKDIR /var/www/html
+
+# Create Laravel storage structure with correct permissions (cached layer)
+RUN mkdir -p storage/app/public \
+        storage/framework/cache \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+# Copy vendor from builder stage (cached if composer.lock unchanged)
+COPY --from=builder /var/www/html/vendor ./vendor
+
+# Copy application code (storage contents excluded via .dockerignore)
+COPY --chown=www-data:www-data . .
+
+# Switch to non-root user
+USER www-data
+
+EXPOSE 9000
