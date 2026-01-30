@@ -11,6 +11,7 @@
 /storage/pail
 /vendor
 .env
+.env.docker.prod
 .env.backup
 .env.production
 .phpactor.json
