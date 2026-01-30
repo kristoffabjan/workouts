@@ -785,6 +785,14 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
   - Created custom theme CSS for Admin panel with language switch source
   - Updated App panel theme CSS with language switch source
   - Configured circular badges for language labels
+- [x] Additionally localize some static pages (homepage, terms, privacy, features) - optional
+  - Used `__('...')` helper for all static text in views
+  - Created translation entries in `lang/en/pages.php` and `lang/sl/pages.php`
+  - Localized: home.blade.php, features.blade.php, terms.blade.php, privacy.blade.php
+  - Updated public-layout.blade.php component with translations
+- [x] Search for hardcoded strings in codebase and replace with translation functions
+  - Static pages now use translation keys from `pages.*` namespace
+  - All navigation, footer, and content text is translated
 - [x] Test: 217 tests pass for all related resources
 
 **Deliverable**: ✅ Fully localized application with English and Slovenian support, language switcher in both panels
@@ -890,24 +898,11 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 - [ ] Replace deprecated Filament components
   - replace form() with schema()
   - mutateFormDataUsing() with mutateDataUsing()
-- [ ] Customize Filament theme
-  - Brand colors
-  - Logo and favicon
-  - Custom fonts (optional)
-- [ ] Improve navigation structure
-  - Group related resources
-  - Add icons to navigation items
-  - Badge counts (e.g., pending trainings)
 - [ ] Add helpful notifications
   - Success messages for all actions
   - Info notifications for important events
   - Error messages with actionable suggestions
-- [ ] Implement search functionality
-  - Global search across trainings and exercises
-  - Quick create shortcuts
-- [ ] Add tooltips and help text
-  - Explain complex fields
-  - Provide examples where helpful
+- [ ] Make sure attach actions save automatically without extra submit
 - [ ] Improve table layouts
   - Optimize column visibility
   - Add useful default filters
@@ -1009,11 +1004,6 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
   - Training workflow
   - Exercise library usage
   - Calendar usage
-- [ ] Create deployment guide (future use)
-  - Production environment requirements
-  - Environment variables
-  - Database migrations
-  - Backup strategy
 - [ ] Code cleanup
   - Remove debug code
   - Remove commented-out code
@@ -1107,7 +1097,8 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 ### Tasks
 - [ ] Remove Recent Client Completions widget from personal teams(is_personal = true) and only show in teams where user is coach
 - [ ] On training creation and duplication, allow trainings being made with minute accuracy, not second accuracy (set seconds to 0)
-
+- [ ] On training table, default to show trainings in order from today to future (ascending), not descending
+- [ ] Add  training row action "schedule" to trainings view and edit page as well, not only in table
 ## Disk setup
 **Goal**: Configure file storage for application assets.
 ### Tasks
@@ -1120,6 +1111,243 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 - [ ] Add validation for file uploads
 - [ ] Tests: at least 10 passing tests for file storage functionality
 ## Implementation Notes
+
+---
+
+## Milestone 21: Pre deploy fixes and checks
+**Goal**: Finalize codebase and configurations before deployment.
+### Tasks
+- [ ] Add favicon to public folder and link in main layout
+- [ ] Review and clean up environment variables in .env.example
+- [ ] Ensure all sensitive data is managed via secrets in deployment pipeline
+- [ ] Add idempotent production seeders for essential data
+  - Global exercises library seeding
+  - Exercise tags seeding
+
+---
+
+## Milestone 22: Deployment Preparation
+**Goal**: Prepare the application for deployment to production environment.
+
+### Requirements Summary
+- [x] Read deployment setup requirements
+  - Github Actions for CI/CD (ref: https://gist.github.com/markshust/2ca8ed78499681d3dc14e9aa7c898af9)
+  - Local testing with nektos/act (ref: https://github.com/nektos/act)
+  - Digital Ocean droplet with Docker (ref: https://www.digitalocean.com/community/tutorials/how-to-deploy-a-laravel-application-with-docker-on-ubuntu-20-04)
+  - Nginx reverse proxy for multiple apps on same server (each app on subdomain)
+  - Container registry for Docker images
+  - Production Docker images (no xdebug, no dev tools, optimized)
+  - Deployment triggered on merge to main/master
+  - Docker layer caching in GitHub Actions
+  - Secrets management for sensitive data
+
+### Concrete Tasks
+
+#### Phase 1: Production Docker Setup
+- [x] Create production PHP Dockerfile (`.docker/php/Dockerfile.prod`)
+  - Use lightweight base image (php:8.4-fpm-alpine)
+  - No xdebug, no development tools
+  - Install only production extensions (pdo_mysql, redis, gd, zip, opcache)
+  - Configure opcache for production
+  - Set proper PHP memory limits and timeouts
+  - Multi-stage build (builder stage for Composer, production stage without it)
+  - Created `.dockerignore` for optimized builds
+- [x] Create production Nginx configuration (`.docker/nginx/default.prod.conf`)
+  - Optimize for production (gzip, caching headers, security headers)
+  - Remove debug/development settings
+  - Created `.docker/nginx/Dockerfile.prod` for self-contained image
+- [x] Create `docker-compose.prod.yml`
+  - Production-optimized service definitions
+  - Remove development-only services (phpmyadmin, mailpit)
+  - Configure proper restart policies
+  - Set resource limits
+  - External network for reverse proxy integration
+  - Added scheduler container for cron jobs
+- [x] Create `.env.production.example` template
+  - Document all required production environment variables
+  - Include placeholders for secrets
+  - Created `.env.docker.example` for Docker Compose variables
+
+#### Phase 1.5: Production Docker Setup
+- [x] Simplify production Docker setup
+  - PHP image builds everything (Composer + Node in single builder stage)
+  - Nginx copies static files from PHP image (no duplicate npm build)
+  - Nginx serves static files directly, proxies PHP to PHP-FPM
+  - All containers healthy and running
+  - **Build order**: PHP must be built first (nginx depends on it for static files)
+  - See **Phase 8** for complete deployment commands
+
+#### Phase 2: Local prod image build testing
+- [x] Run production docker-compose locally
+  - Build production images
+  - Start containers
+  - Verify app runs correctly in production mode
+  - Test database connection, caching, queue
+  - Test Nginx serving static files and proxying PHP
+
+#### Phase 3: GitHub Actions CI/CD Pipeline
+- [ ] Create `.github/workflows/` directory structure
+- [ ] Create `ci.yml` workflow (runs on all PRs)
+  - Checkout code
+  - Build production Docker image
+  - Run tests in production image
+  - Run Pint for code style checks
+  - Cache Docker layers for faster builds
+- [ ] Create `deploy.yml` workflow (runs on merge to main/master)
+  - Build production Docker image
+  - Run tests in production image
+  - Push image to container registry (tag: commit SHA + latest)
+  - SSH to production server
+  - Pull new image
+  - Run database migrations
+  - Run Laravel optimizations (config:cache, route:cache, view:cache)
+  - Restart containers with zero-downtime strategy
+  - Health check after deployment
+- [ ] Document required GitHub Secrets
+  - `DOCKER_REGISTRY_URL`
+  - `DOCKER_REGISTRY_USERNAME`
+  - `DOCKER_REGISTRY_PASSWORD`
+  - `PRODUCTION_SSH_HOST`
+  - `PRODUCTION_SSH_USER`
+  - `PRODUCTION_SSH_KEY`
+  - `PRODUCTION_APP_PATH`
+
+#### Phase 4: Local CI/CD Testing
+- [ ] Install and configure `act` for local GitHub Actions testing
+  - Create `.actrc` configuration file
+  - Document how to run workflows locally
+- [ ] Test production Docker build locally
+  - Verify images build successfully
+  - Verify app runs with production config
+
+#### Phase 5: Container Registry Setup
+- [ ] Choose container registry (GitHub Container Registry or DigitalOcean Container Registry)
+- [ ] Create registry and configure access credentials
+- [ ] Test push/pull from local machine
+- [ ] Add registry credentials to GitHub Secrets
+
+#### Phase 6: Domain & SSL Setup
+- [ ] Purchase domain name
+- [ ] Configure DNS records pointing to DigitalOcean droplet
+- [ ] Plan subdomain structure for multiple apps
+
+#### Phase 7: Server Infrastructure
+- [ ] Provision DigitalOcean droplet (Ubuntu 22.04 LTS recommended)
+  - Minimum specs: 2GB RAM, 1 vCPU, 50GB SSD
+- [ ] Initial server security hardening
+  - Create non-root user with sudo access
+  - Disable root SSH login
+  - Configure SSH key authentication only
+  - Set up fail2ban
+- [ ] Install Docker and Docker Compose on server
+- [ ] Configure UFW firewall
+  - Allow SSH (22)
+  - Allow HTTP (80)
+  - Allow HTTPS (443)
+  - Deny all other incoming by default
+- [ ] Set up Nginx reverse proxy on host
+  - Install Nginx on host (not in Docker)
+  - Create server blocks for each subdomain
+  - Configure proxy_pass to Docker containers
+  - Set up upstream definitions
+- [ ] Set up SSL with Let's Encrypt/Certbot
+  - Install certbot
+  - Generate certificates for all subdomains
+  - Configure auto-renewal cron job
+- [ ] Create deployment directory structure on server
+  - `/opt/apps/workouts/` for this app
+  - Shared volumes for persistent data
+
+#### Phase 8: Deployment Scripts
+
+##### First-Time Server Setup
+```bash
+# 1. Create external network (once per server, for multi-app reverse proxy)
+docker network create web
+
+# 2. Build all images (PHP must be built first - nginx depends on it)
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build php
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build nginx horizon scheduler
+
+# 3. Start containers
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
+
+# 4. Generate APP_KEY and add to .env.production
+php artisan key:generate --show
+# Copy output to .env.production, then restart: docker-compose restart php
+
+# 5. Run migrations
+docker exec workouts_php php artisan migrate --force
+
+# 6. Cache configuration
+docker exec workouts_php php artisan config:cache
+docker exec workouts_php php artisan route:cache
+docker exec workouts_php php artisan view:cache
+
+# 7. Create system admin user
+docker exec workouts_php php artisan user:create "Admin Name" "admin@example.com" "securepassword" --admin
+
+# 8. Seed global exercises library (idempotent)
+docker exec workouts_php php artisan db:seed --class=GlobalExerciseSeeder --force
+```
+
+##### Commands for Each Deploy (`scripts/deploy.sh`)
+```bash
+#!/bin/bash
+set -e
+
+# 1. Pull/build new images
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build php
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build nginx horizon scheduler
+
+# 2. Restart containers with new images
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
+
+# 3. Run migrations
+docker exec workouts_php php artisan migrate --force
+
+# 4. Clear and rebuild caches
+docker exec workouts_php php artisan config:cache
+docker exec workouts_php php artisan route:cache
+docker exec workouts_php php artisan view:cache
+
+# 5. Restart queue workers (pick up new code)
+docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod restart horizon
+
+# 6. (Optional) Re-seed global exercises if new ones added
+docker exec workouts_php php artisan db:seed --class=GlobalExerciseSeeder --force
+
+# 7. Health check
+docker-compose -f docker-compose.prod.yml ps
+```
+
+##### Environment Files Required
+- `.env.docker.prod` - Docker Compose variables (DB credentials, project name)
+- `.env.production` - Laravel variables (APP_KEY, APP_URL, DB_*, REDIS_*, etc.)
+
+##### Tasks
+- [ ] Create `scripts/deploy.sh` for server-side deployment
+- [ ] Create `scripts/rollback.sh` for emergency rollback
+  - Keep previous 3 image versions
+  - Quick rollback procedure
+- [ ] Create `scripts/backup.sh` for database backups
+  - Daily automated backups
+  - Upload to external storage (optional)
+
+#### Phase 9: Testing & Verification
+- [ ] Test full CI/CD pipeline with a test branch
+- [ ] Verify zero-downtime deployment
+- [ ] Test rollback procedure
+- [ ] Verify SSL and domain configuration
+- [ ] Test application functionality in production
+- [ ] Set up basic monitoring/alerts (optional: Uptime monitoring service)
+
+### Reference Links
+- GitHub Actions for Laravel: https://gist.github.com/markshust/2ca8ed78499681d3dc14e9aa7c898af9
+- Local GitHub Actions testing: https://github.com/nektos/act
+- Laravel Docker deployment: https://www.digitalocean.com/community/tutorials/how-to-deploy-a-laravel-application-with-docker-on-ubuntu-20-04
+- Nginx reverse proxy: https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/ 
+
 
 ### Development Workflow
 
