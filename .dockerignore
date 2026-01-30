@@ -33,10 +33,8 @@ storage/logs/*
 bootstrap/cache/*
 !bootstrap/cache/.gitignore
 
-# Development/CI files
-.docker
-docker-compose*.yml
-Dockerfile*
+# Development/CI files (keep .docker for prod configs)
+docker-compose.yml
 .editorconfig
 .styleci.yml
 phpunit.xml

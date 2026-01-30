@@ -2,36 +2,23 @@
 # PRODUCTION NGINX DOCKERFILE
 # ============================================
 #
-# Why a custom Nginx image?
-# -------------------------
-# In production, code is baked into images (not volume mounted).
-# Nginx needs access to static files (CSS, JS, images) to serve them.
-#
-# Options were:
-# 1. Share files via volume → Complex, empty volume problem
-# 2. Let PHP serve static files → Slow, wastes PHP resources
-# 3. Build Nginx image with public/ baked in → Clean, self-contained ✓
-#
-# This approach:
-# - Both PHP and Nginx images contain the public/ folder
-# - Yes, there's duplication, but images are self-contained
-# - No volume coordination needed
-# - Nginx serves static files directly (fast)
-# - PHP handles only PHP requests
+# Nginx serves static files directly (fast) and proxies PHP to PHP-FPM.
+# Static files are copied from PHP builder stage (no duplicate npm build).
 #
 # ============================================
 
-# ----------------------------------------
-# BASE IMAGE
-# ----------------------------------------
-# Use specific version tag for reproducible builds
-# - nginx:alpine → BAD: pulls latest, may change unexpectedly
-# - nginx:1.27-alpine → BETTER: specific major.minor
-# - nginx:1.29.4-alpine → BEST: exact version, fully reproducible
-#
-# Check for updates: https://hub.docker.com/_/nginx/tags
-# Update periodically for security patches, but test first!
-FROM nginx:1.29.4-alpine
+# ============================================
+# STAGE 1: Get static files from PHP builder
+# ============================================
+# Reuse the PHP Dockerfile's builder stage to get compiled assets
+# This avoids duplicate npm builds
+
+FROM workouts-php:latest AS php-source
+
+# ============================================
+# STAGE 2: Production Nginx
+# ============================================
+FROM nginx:1.27-alpine
 
 # Remove default Nginx config
 RUN rm /etc/nginx/conf.d/default.conf
@@ -39,18 +26,14 @@ RUN rm /etc/nginx/conf.d/default.conf
 # Copy our production config
 COPY .docker/nginx/default.prod.conf /etc/nginx/conf.d/default.conf
 
-# Copy public directory (static assets)
-# This includes: CSS, JS, images, fonts, favicon, robots.txt, etc.
-COPY public /var/www/html/public
+# Copy public directory from PHP image (includes built assets)
+COPY --from=php-source /var/www/html/public /var/www/html/public
 
-# Nginx runs as nginx user by default
-# Ensure it can read the files
+# Set ownership
 RUN chown -R nginx:nginx /var/www/html/public
 
-# Expose port 80
 EXPOSE 80
 
-# Healthcheck: verify Nginx master process is running
-# This is more reliable than HTTP check (which depends on PHP)
+# Healthcheck: verify Nginx config is valid and process is running
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=5s \
     CMD nginx -t && kill -0 $(cat /var/run/nginx.pid) || exit 1

@@ -1,23 +1,66 @@
 # ============================================
-# STAGE 1: Builder (install dependencies)
+# PRODUCTION PHP DOCKERFILE
 # ============================================
+#
+# Multi-stage build:
+# 1. Builder: Composer install + Node build (Node needs vendor/livewire/flux CSS)
+# 2. Production: Final optimized image
+#
+# ============================================
+
+# ============================================
+# STAGE 1: Builder (Composer + Node)
+# ============================================
+# Node build depends on Composer (needs vendor/livewire/flux/dist/flux.css)
+# So we do both in one stage: Composer first, then Node build
+
 FROM php:8.4-fpm-alpine3.22 AS builder
+
+# Install system deps for PHP extensions + Node.js
+RUN apk add --no-cache \
+        nodejs npm \
+        icu-dev \
+        libzip-dev \
+        linux-headers \
+    # Install PHP extensions required by composer.lock
+    && docker-php-ext-install intl pcntl zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy composer files
+# ----------------------------------------
+# Step 1: Composer install
+# ----------------------------------------
+# Copy composer files and install dependencies
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader
+
+# ----------------------------------------
+# Step 2: Node build
+# ----------------------------------------
+# Now we have vendor/ with livewire/flux CSS
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install exact versions from lock file
+RUN npm ci
+
+# Copy source files needed for build
+COPY vite.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+# Build production assets (now has access to vendor/livewire/flux/dist/flux.css)
+RUN npm run build
 
 # ============================================
 # STAGE 2: Production (final image)
@@ -46,6 +89,7 @@ RUN apk add --no-cache --virtual .build-deps \
         libzip \
         icu-libs \
         curl \
+        procps-ng \
     # Configure and install GD
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
@@ -81,8 +125,11 @@ RUN mkdir -p storage/app/public \
         bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Copy vendor from builder stage (cached if composer.lock unchanged)
+# Copy vendor from builder stage
 COPY --from=builder /var/www/html/vendor ./vendor
+
+# Copy built frontend assets from builder stage
+COPY --from=builder /var/www/html/public/build ./public/build
 
 # Copy application code (storage contents excluded via .dockerignore)
 COPY --chown=www-data:www-data . .
