@@ -1,0 +1,399 @@
+# ============================================
+# PRODUCTION DOCKER COMPOSE
+# ============================================
+#
+# Key differences from development:
+# 1. No volume mounts for code (code is baked into images)
+# 2. No dev tools (phpmyadmin, mailpit, node)
+# 3. Database/Redis not exposed to host (internal only)
+# 4. Uses production Dockerfiles (multi-stage, optimized)
+# 5. External network for reverse proxy integration
+# 6. Resource limits to prevent runaway containers
+# 7. Healthchecks for monitoring
+#
+# Usage:
+#   # First time: create external network
+#   docker network create web
+#
+#   # Build and start
+#   docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+#   # View logs
+#   docker-compose -f docker-compose.prod.yml logs -f
+#
+#   # Stop
+#   docker-compose -f docker-compose.prod.yml down
+#
+# ============================================
+
+services:
+  # ============================================
+  # NGINX - Reverse Proxy
+  # ============================================
+  # Pure reverse proxy - forwards ALL requests to PHP-FPM
+  # PHP serves everything including static files via Laravel
+  #
+  # Request flow:
+  # Internet → Host Nginx (SSL, :443) → This Nginx (:8080) → PHP-FPM (:9000)
+  #
+  # Why this approach?
+  # - No duplicate npm builds (PHP image builds everything)
+  # - Simpler setup with no shared volumes needed
+  # - Tiny nginx image (just base + config)
+
+  nginx:
+    build:
+      context: .
+      dockerfile: .docker/nginx/Dockerfile.prod
+
+    container_name: ${COMPOSE_PROJECT_NAME}_nginx
+    restart: always
+
+    # 127.0.0.1:8080:80 = only localhost can connect
+    # Host Nginx reverse proxy connects to 127.0.0.1:8080
+    ports:
+      - "127.0.0.1:8080:80"
+
+    # No volumes needed - nginx is a pure proxy
+
+    depends_on:
+      php:
+        condition: service_healthy
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+
+    networks:
+      - internal
+      - web
+
+  # ============================================
+  # PHP-FPM - Application Server
+  # ============================================
+  # Runs Laravel application code
+  # All PHP code is baked into the image
+
+  php:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile.prod
+      target: production
+
+    container_name: ${COMPOSE_PROJECT_NAME}_php
+    restart: always
+
+    # ----------------------------------------
+    # ENVIRONMENT VARIABLES
+    # ----------------------------------------
+    # Core Laravel settings
+    # Additional settings come from .env file mounted below
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      # These are set in .env.production file:
+      # APP_KEY, APP_URL, DB_*, REDIS_*, MAIL_*, etc.
+
+    # ----------------------------------------
+    # VOLUMES
+    # ----------------------------------------
+    # Only mount what MUST persist across deploys:
+    # - storage/ for uploads, logs, cache
+    # - .env file for configuration
+    volumes:
+      # ----------------------------------------
+      # STORAGE VOLUME
+      # ----------------------------------------
+      # Persists: user uploads, logs, framework cache
+      # Without this, you'd lose uploads on every deploy!
+      - app_storage:/var/www/html/storage
+
+      # ----------------------------------------
+      # ENVIRONMENT FILE
+      # ----------------------------------------
+      # Laravel needs .env file for configuration
+      # Mount it from host (created during deployment)
+      #
+      # :ro = read-only (PHP shouldn't modify it)
+      #
+      # The file lives at /opt/apps/workouts/.env.production on server
+      # Deployment script creates/updates it with secrets
+      - ./.env.production:/var/www/html/.env:ro
+
+    # ----------------------------------------
+    # HEALTHCHECK
+    # ----------------------------------------
+    # Check if PHP-FPM master process is running
+    #
+    # Why not HTTP check?
+    # - PHP-FPM doesn't serve HTTP directly
+    # - Would need to go through Nginx (circular dependency)
+    #
+    # pgrep checks if process named "php-fpm" exists
+    # "php-fpm: master" is the master process we want to verify
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep php-fpm > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+  # ============================================
+  # HORIZON - Queue Worker
+  # ============================================
+  # Processes background jobs (emails, notifications, exports, etc.)
+  #
+  # Why separate container?
+  # - Long-running process (not request-response)
+  # - Can be scaled independently
+  # - Failures don't affect web requests
+
+  horizon:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile.prod
+      target: production
+
+    container_name: ${COMPOSE_PROJECT_NAME}_horizon
+    restart: always
+
+    # Override default CMD to run Horizon instead of PHP-FPM
+    command: php artisan horizon
+
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+
+    volumes:
+      - app_storage:/var/www/html/storage
+      - ./.env.production:/var/www/html/.env:ro
+
+    # ----------------------------------------
+    # HEALTHCHECK
+    # ----------------------------------------
+    # Check if Horizon is running and not paused
+    # artisan horizon:status returns "running" if healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan horizon:status | grep -q running || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    depends_on:
+      php:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+  # ============================================
+  # SCHEDULER - Cron Jobs
+  # ============================================
+  # Runs Laravel's task scheduler every minute
+  # Replaces traditional crontab
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile.prod
+      target: production
+
+    container_name: ${COMPOSE_PROJECT_NAME}_scheduler
+    restart: always
+
+    # schedule:work runs continuously, checking every minute
+    command: php artisan schedule:work
+
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+
+    volumes:
+      - app_storage:/var/www/html/storage
+      - ./.env.production:/var/www/html/.env:ro
+
+    # Simple healthcheck: is the process running?
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'schedule:work' > /dev/null || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+    depends_on:
+      php:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+  # ============================================
+  # MYSQL - Database
+  # ============================================
+  # NOT exposed to host - internal network only
+  #
+  # Access for debugging:
+  #   docker exec -it workouts_mysql mysql -u root -p
+
+  mysql:
+    image: mysql:8.4.3
+    container_name: ${COMPOSE_PROJECT_NAME}_mysql
+    restart: always
+
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    # ----------------------------------------
+    # HEALTHCHECK
+    # ----------------------------------------
+    # Use mysqladmin ping without password in command
+    # MySQL allows root@localhost without password for healthcheck
+    # by using --protocol=socket
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    networks:
+      - internal
+
+  # ============================================
+  # REDIS - Cache & Queue Backend
+  # ============================================
+  # Used for: sessions, cache, queue jobs, Horizon
+
+  redis:
+    image: redis:7.4.2-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}_redis
+    restart: always
+
+    # Enable persistence so queue jobs survive restart
+    command: redis-server --appendonly yes
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+    networks:
+      - internal
+
+# ============================================
+# NETWORKS
+# ============================================
+
+networks:
+  # ----------------------------------------
+  # INTERNAL NETWORK
+  # ----------------------------------------
+  # Private network for container-to-container communication
+  # internal: true means no route to external network
+  # Containers can talk to each other but not to internet
+  internal:
+    driver: bridge
+    internal: true
+
+  # ----------------------------------------
+  # WEB NETWORK
+  # ----------------------------------------
+  # External network for reverse proxy access
+  #
+  # Create once on server: docker network create web
+  # All apps on this server join the same 'web' network
+  # Host Nginx can reach any container on this network
+  web:
+    external: true
+
+# ============================================
+# VOLUMES
+# ============================================
+
+volumes:
+  # Database - CRITICAL: Back up regularly!
+  mysql_data:
+    driver: local
+
+  # Redis persistence (queued jobs, sessions)
+  redis_data:
+    driver: local
+
+  # Laravel storage (uploads, logs, cache)
+  app_storage:
+    driver: local
