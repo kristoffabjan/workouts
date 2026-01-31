@@ -1185,55 +1185,168 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
   - Test database connection, caching, queue
   - Test Nginx serving static files and proxying PHP
 
+##### Phase 2.5: Local docker compose improvements
+- [x] Remove container names
+- [x] Use COMPOSE_PROJECT_NAME for unique naming
+- [x] Port to new volumes
+
 #### Phase 3: GitHub Actions CI/CD Pipeline
-- [ ] Create `.github/workflows/` directory structure
-- [ ] Create `ci.yml` workflow (runs on all PRs)
-  - Checkout code
-  - Build production Docker image
-  - Run tests in production image
-  - Run Pint for code style checks
-  - Cache Docker layers for faster builds
-- [ ] Create `deploy.yml` workflow (runs on merge to main/master)
-  - Build production Docker image
-  - Run tests in production image
-  - Push image to container registry (tag: commit SHA + latest)
-  - SSH to production server
-  - Pull new image
-  - Run database migrations
-  - Run Laravel optimizations (config:cache, route:cache, view:cache)
-  - Restart containers with zero-downtime strategy
-  - Health check after deployment
-- [ ] Document required GitHub Secrets
-  - `DOCKER_REGISTRY_URL`
-  - `DOCKER_REGISTRY_USERNAME`
-  - `DOCKER_REGISTRY_PASSWORD`
-  - `PRODUCTION_SSH_HOST`
-  - `PRODUCTION_SSH_USER`
-  - `PRODUCTION_SSH_KEY`
-  - `PRODUCTION_APP_PATH`
+**Strategy:** Keep existing `tests.yml` and `lint.yml` for fast PR feedback (~2-3 min). Add `deploy.yml` for production Docker builds and deployment on `master` merge.
 
-#### Phase 4: Local CI/CD Testing
-- [ ] Install and configure `act` for local GitHub Actions testing
-  - Create `.actrc` configuration file
-  - Document how to run workflows locally
-- [ ] Test production Docker build locally
-  - Verify images build successfully
-  - Verify app runs with production config
+##### 3.1 Existing Workflows (Keep As-Is)
+- [x] `lint.yml` - Runs Pint on PRs (fast feedback)
+- [x] `tests.yml` - Runs Pest on PHP 8.4/8.5 (fast feedback, uses `setup-php`)
 
-#### Phase 5: Container Registry Setup
-- [ ] Choose container registry (GitHub Container Registry or DigitalOcean Container Registry)
-- [ ] Create registry and configure access credentials
-- [ ] Test push/pull from local machine
-- [ ] Add registry credentials to GitHub Secrets
+##### 3.2 Create `deploy.yml` Workflow
+**Triggers:** Push to `master` branch only (after PR merge)
 
-#### Phase 6: Domain & SSL Setup
-- [ ] Purchase domain name
+**Jobs:**
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout code
+      - uses: actions/checkout@v4
+
+      # 2. Set up Docker Buildx (for better caching later)
+      - uses: docker/setup-buildx-action@v3
+
+      # 3. Login to DigitalOcean Container Registry
+      - name: Login to DigitalOcean Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.digitalocean.com
+          username: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          password: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      # 4. Build PHP image (tagged locally)
+      - name: Build PHP image
+        run: docker build -t workouts-php:latest -f .docker/php/Dockerfile.prod .
+
+      # 5. Build Nginx image (depends on PHP)
+      - name: Build Nginx image
+        run: docker build -t workouts-nginx:latest -f .docker/nginx/Dockerfile.prod .
+
+      # 6. Smoke test (verify app boots - full tests run in tests.yml)
+      - name: Smoke test
+        run: |
+          docker run --rm workouts-php:latest php artisan --version
+          docker run --rm workouts-php:latest php artisan route:list --compact
+
+      # 7. Tag and push images to DigitalOcean Container Registry
+      - name: Push images to registry
+        env:
+          REGISTRY: registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}
+        run: |
+          # Tag with SHA and latest
+          docker tag workouts-php:latest $REGISTRY/workouts-php:${{ github.sha }}
+          docker tag workouts-php:latest $REGISTRY/workouts-php:latest
+          docker tag workouts-nginx:latest $REGISTRY/workouts-nginx:${{ github.sha }}
+          docker tag workouts-nginx:latest $REGISTRY/workouts-nginx:latest
+
+          # Push all tags
+          docker push $REGISTRY/workouts-php:${{ github.sha }}
+          docker push $REGISTRY/workouts-php:latest
+          docker push $REGISTRY/workouts-nginx:${{ github.sha }}
+          docker push $REGISTRY/workouts-nginx:latest
+
+      # 8. Deploy to server via SSH
+      - name: Deploy to production
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}
+        with:
+          host: ${{ secrets.PRODUCTION_SSH_HOST }}
+          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          envs: REGISTRY
+          script: |
+            cd ${{ secrets.PRODUCTION_APP_PATH }}
+
+            # Login to DO registry on server
+            docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            # Pull new images
+            docker pull $REGISTRY/workouts-php:latest
+            docker pull $REGISTRY/workouts-nginx:latest
+
+            # Restart containers
+            docker-compose -f docker-compose.prod.yml up -d
+
+            # Run migrations
+            docker-compose -f docker-compose.prod.yml exec -T php php artisan migrate --force
+
+            # Clear and rebuild caches
+            docker-compose -f docker-compose.prod.yml exec -T php php artisan config:cache
+            docker-compose -f docker-compose.prod.yml exec -T php php artisan route:cache
+            docker-compose -f docker-compose.prod.yml exec -T php php artisan view:cache
+
+            # Restart Horizon to pick up new code
+            docker-compose -f docker-compose.prod.yml restart horizon
+
+            # Health check
+            docker-compose -f docker-compose.prod.yml ps
+```
+
+##### 3.3 Tasks
+- [x] Create `.github/workflows/deploy.yml` with above structure
+- [x] Create DigitalOcean Container Registry in DO console
+- [x] Add GitHub Secrets (DO token, registry name)
+- [ ] Add GitHub Secrets (SSH credentials - after server setup)
+- [x] Update `docker-compose.prod.yml` to pull from DO registry instead of local builds
+- [x] Test workflow locally with `act` (Phase 4) - images pushed to DO registry
+
+##### 3.4 Required GitHub Secrets
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `DIGITALOCEAN_ACCESS_TOKEN` | DO API token (with registry read/write) | `dop_v1_xxx...` |
+| `DIGITALOCEAN_REGISTRY_NAME` | Your DO registry name | `my-registry` |
+| `PRODUCTION_SSH_HOST` | Server IP or hostname | `123.456.789.0` |
+| `PRODUCTION_SSH_USER` | SSH username | `deploy` |
+| `PRODUCTION_SSH_KEY` | Private SSH key (full content) | `-----BEGIN...` |
+| `PRODUCTION_APP_PATH` | App directory on server | `/opt/apps/workouts` |
+
+**Note:** Flux credentials not needed - using Flux Free from Packagist (no auth required).
+
+##### 3.5 Key Decisions Made
+1. **Keep existing workflows** - Fast PR feedback with `setup-php` (~2-3 min)
+2. **Deploy on master only** - PRs → master → deploy
+3. **Build order** - PHP first, then Nginx (nginx copies files from PHP image)
+4. **Tests in tests.yml, smoke test in deploy** - Full Pest tests run on PRs via `tests.yml`. Deploy workflow only does smoke test (verify app boots) since production image has no dev dependencies.
+5. **Registry tags** - Both SHA (for rollback) and `latest` (for easy pulls)
+6. **Docker layer caching** - Deferred to Phase 10 (optimization)
+
+#### Phase 4: Local CI/CD Testing ✅
+- [x] Install and configure `act` for local GitHub Actions testing
+  - Created `.actrc` configuration file
+  - Created `.secrets` file for local testing
+- [x] Test production Docker build locally
+  - Images build successfully
+  - App boots (smoke test passes)
+  - Images pushed to DO registry via `act`
+
+#### Phase 5: Container Registry Setup ✅
+- [x] Choose container registry (DigitalOcean Container Registry)
+- [x] Create registry and configure access credentials
+- [x] Test push/pull from local machine (via `act`)
+- [x] Add registry credentials to GitHub Secrets
+
+#### Phase 6: Domain & SSL Setup (partial)
+- [x] Purchase domain name (ipok.si)
 - [ ] Configure DNS records pointing to DigitalOcean droplet
-- [ ] Plan subdomain structure for multiple apps
+- [x] Plan subdomain structure - using main domain ipok.si
 
 #### Phase 7: Server Infrastructure
-- [ ] Provision DigitalOcean droplet (Ubuntu 22.04 LTS recommended)
-  - Minimum specs: 2GB RAM, 1 vCPU, 50GB SSD
+- [x] Provision DigitalOcean droplet (Ubuntu 24.04 LTS, Basic $12/mo)
+  - 1 vCPU, 2GB RAM, 50GB SSD, Frankfurt region
 - [ ] Initial server security hardening
   - Create non-root user with sudo access
   - Disable root SSH login
@@ -1341,6 +1454,57 @@ docker-compose -f docker-compose.prod.yml ps
 - [ ] Verify SSL and domain configuration
 - [ ] Test application functionality in production
 - [ ] Set up basic monitoring/alerts (optional: Uptime monitoring service)
+
+#### Phase 10: CI/CD Optimization (Docker Layer Caching)
+**Goal**: Speed up CI/CD builds by caching Docker layers in the container registry.
+
+##### Why Caching Matters
+- GitHub runners are ephemeral (fresh VM each time, no local Docker cache)
+- Without caching: every build rebuilds all layers (~8-10 min)
+- With caching: only changed layers rebuild (~2-3 min for code changes)
+
+##### Implementation
+- [ ] Use `docker/build-push-action` with registry-based cache
+- [ ] Configure cache for PHP image (largest, most layers)
+- [ ] Configure cache for Nginx image (smaller, depends on PHP)
+
+##### Workflow Changes
+```yaml
+- uses: docker/setup-buildx-action@v3
+
+- name: Build PHP with cache
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    file: .docker/php/Dockerfile.prod
+    tags: workouts-php:latest
+    cache-from: type=registry,ref=registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/workouts-php:cache
+    cache-to: type=registry,ref=registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/workouts-php:cache,mode=max
+    load: true  # Load into local Docker for testing
+
+- name: Build Nginx with cache
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    file: .docker/nginx/Dockerfile.prod
+    tags: workouts-nginx:latest
+    cache-from: type=registry,ref=registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/workouts-nginx:cache
+    cache-to: type=registry,ref=registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/workouts-nginx:cache,mode=max
+    load: true
+```
+
+##### Expected Performance Improvement
+| Scenario | Without Cache | With Cache |
+|----------|---------------|------------|
+| First build | ~8-10 min | ~8-10 min |
+| Code change only | ~8-10 min | ~2-3 min |
+| Dependency change | ~8-10 min | ~5-6 min |
+
+##### Notes
+- Cache is stored in container registry (persists between builds)
+- `mode=max` caches all layers (not just final image layers)
+- `load: true` makes image available locally for testing before push
+- Can be implemented after basic CI/CD works (optimization phase)
 
 ### Reference Links
 - GitHub Actions for Laravel: https://gist.github.com/markshust/2ca8ed78499681d3dc14e9aa7c898af9
