@@ -29,3 +29,5 @@ yarn-error.log
 CLAUDE.md
 boost.json
 /.ai
+.secrets
+.actrc
