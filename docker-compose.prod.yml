@@ -15,8 +15,11 @@
 #   # First time: create external network
 #   docker network create web
 #
-#   # Build and start
-#   docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#   # Login to DO registry
+#   docker login registry.digitalocean.com
+#
+#   # Pull and start
+#   docker-compose -f docker-compose.prod.yml up -d
 #
 #   # View logs
 #   docker-compose -f docker-compose.prod.yml logs -f
@@ -42,10 +45,7 @@ services:
   # - Tiny nginx image (just base + config)
 
   nginx:
-    build:
-      context: .
-      dockerfile: .docker/nginx/Dockerfile.prod
-
+    image: registry.digitalocean.com/workouts/workouts-nginx:latest
     container_name: ${COMPOSE_PROJECT_NAME}_nginx
     restart: always
 
@@ -80,11 +80,7 @@ services:
   # All PHP code is baked into the image
 
   php:
-    build:
-      context: .
-      dockerfile: .docker/php/Dockerfile.prod
-      target: production
-
+    image: registry.digitalocean.com/workouts/workouts-php:latest
     container_name: ${COMPOSE_PROJECT_NAME}_php
     restart: always
 
@@ -172,11 +168,7 @@ services:
   # - Failures don't affect web requests
 
   horizon:
-    build:
-      context: .
-      dockerfile: .docker/php/Dockerfile.prod
-      target: production
-
+    image: registry.digitalocean.com/workouts/workouts-php:latest
     container_name: ${COMPOSE_PROJECT_NAME}_horizon
     restart: always
 
@@ -230,11 +222,7 @@ services:
   # Replaces traditional crontab
 
   scheduler:
-    build:
-      context: .
-      dockerfile: .docker/php/Dockerfile.prod
-      target: production
-
+    image: registry.digitalocean.com/workouts/workouts-php:latest
     container_name: ${COMPOSE_PROJECT_NAME}_scheduler
     restart: always
 
@@ -282,7 +270,7 @@ services:
   #   docker exec -it workouts_mysql mysql -u root -p
 
   mysql:
-    image: mysql:8.4
+    image: mysql:8.4.3
     container_name: ${COMPOSE_PROJECT_NAME}_mysql
     restart: always
 
@@ -326,7 +314,7 @@ services:
   # Used for: sessions, cache, queue jobs, Horizon
 
   redis:
-    image: redis:alpine
+    image: redis:7.4.2-alpine
     container_name: ${COMPOSE_PROJECT_NAME}_redis
     restart: always
 
