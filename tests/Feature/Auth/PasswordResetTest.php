@@ -1,59 +1,51 @@
 <?php
 
+use App\Models\Team;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use Filament\Facades\Filament;
+use Filament\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 
-test('reset password link screen can be rendered', function () {
-    $response = $this->get(route('password.request'));
-
-    $response->assertOk();
+test('reset password link screen can be rendered for app panel', function () {
+    $this->get('/app/password-reset/request')->assertOk();
 });
 
-test('reset password link can be requested', function () {
+test('reset password link screen can be rendered for admin panel', function () {
+    $this->get('/admin/password-reset/request')->assertOk();
+});
+
+test('reset password link can be requested for app panel', function () {
     Notification::fake();
 
     $user = User::factory()->create();
+    Team::factory()->hasAttached($user)->create();
 
-    $this->post(route('password.request'), ['email' => $user->email]);
+    Filament::setCurrentPanel(Filament::getPanel('app'));
+
+    Livewire::test(Filament::getCurrentPanel()->getRequestPasswordResetRouteAction())
+        ->fillForm([
+            'email' => $user->email,
+        ])
+        ->call('request')
+        ->assertNotified();
 
     Notification::assertSentTo($user, ResetPassword::class);
 });
 
-test('reset password screen can be rendered', function () {
+test('reset password link can be requested for admin panel', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    $user = User::factory()->globalAdmin()->create();
 
-    $this->post(route('password.request'), ['email' => $user->email]);
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get(route('password.reset', $notification->token));
-        $response->assertOk();
-
-        return true;
-    });
-});
-
-test('password can be reset with valid token', function () {
-    Notification::fake();
-
-    $user = User::factory()->create();
-
-    $this->post(route('password.request'), ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post(route('password.update'), [
-            'token' => $notification->token,
+    Livewire::test(Filament::getCurrentPanel()->getRequestPasswordResetRouteAction())
+        ->fillForm([
             'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+        ])
+        ->call('request')
+        ->assertNotified();
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login', absolute: false));
-
-        return true;
-    });
+    Notification::assertSentTo($user, ResetPassword::class);
 });

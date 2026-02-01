@@ -1,67 +1,102 @@
 <?php
 
+use App\Models\Team;
 use App\Models\User;
-use Laravel\Fortify\Features;
+use Filament\Facades\Filament;
+use Livewire\Livewire;
 
 test('login screen can be rendered', function () {
-    $response = $this->get(route('login'));
-
-    $response->assertOk();
+    $this->get('/app/login')->assertOk();
 });
 
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
+    Team::factory()->hasAttached($user)->create();
 
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
+    Filament::setCurrentPanel(Filament::getPanel('app'));
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+    Livewire::test(Filament::getCurrentPanel()->getLoginRouteAction())
+        ->fillForm([
+            'email' => $user->email,
+            'password' => 'password',
+        ])
+        ->call('authenticate')
+        ->assertHasNoFormErrors()
+        ->assertRedirect();
 
-    $this->assertAuthenticated();
+    $this->assertAuthenticatedAs($user);
 });
 
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
+    Filament::setCurrentPanel(Filament::getPanel('app'));
 
-    $response->assertSessionHasErrorsIn('email');
+    Livewire::test(Filament::getCurrentPanel()->getLoginRouteAction())
+        ->fillForm([
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])
+        ->call('authenticate')
+        ->assertHasFormErrors(['email']);
 
-    $this->assertGuest();
-});
-
-test('users with two factor enabled are redirected to two factor challenge', function () {
-    if (! Features::canManageTwoFactorAuthentication()) {
-        $this->markTestSkipped('Two-factor authentication is not enabled.');
-    }
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
-
-    $user = User::factory()->withTwoFactor()->create();
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
-
-    $response->assertRedirect(route('two-factor.login'));
     $this->assertGuest();
 });
 
 test('users can logout', function () {
     $user = User::factory()->create();
+    Team::factory()->hasAttached($user)->create();
 
-    $response = $this->actingAs($user)->post(route('logout'));
+    $this->actingAs($user)
+        ->post('/app/logout')
+        ->assertRedirect();
 
-    $response->assertRedirect(route('home'));
+    $this->assertGuest();
+});
+
+test('admin login screen can be rendered', function () {
+    $this->get('/admin/login')->assertOk();
+});
+
+test('admin users can authenticate using the login screen', function () {
+    $user = User::factory()->globalAdmin()->create();
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+    Livewire::test(Filament::getCurrentPanel()->getLoginRouteAction())
+        ->fillForm([
+            'email' => $user->email,
+            'password' => 'password',
+        ])
+        ->call('authenticate')
+        ->assertHasNoFormErrors()
+        ->assertRedirect();
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('admin users can not authenticate with invalid password', function () {
+    $user = User::factory()->globalAdmin()->create();
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+    Livewire::test(Filament::getCurrentPanel()->getLoginRouteAction())
+        ->fillForm([
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])
+        ->call('authenticate')
+        ->assertHasFormErrors(['email']);
+
+    $this->assertGuest();
+});
+
+test('admin users can logout', function () {
+    $user = User::factory()->globalAdmin()->create();
+
+    $this->actingAs($user)
+        ->post('/admin/logout')
+        ->assertRedirect();
+
     $this->assertGuest();
 });

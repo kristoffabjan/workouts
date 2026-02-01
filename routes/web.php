@@ -40,8 +40,4 @@ Route::get('/request-access', RequestAccess::class)
     ->name('request-access')
     ->middleware('guest');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
 require __DIR__.'/settings.php';

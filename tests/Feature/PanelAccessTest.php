@@ -85,10 +85,9 @@ describe('App Panel Access', function () {
 });
 
 describe('Landing Page', function () {
-    it('shows login links on landing page', function () {
+    it('shows login link on landing page', function () {
         $this->get('/')
             ->assertOk()
-            ->assertSee('User Login')
-            ->assertSee('Admin Login');
+            ->assertSee(__('pages.common.login'));
     });
 });

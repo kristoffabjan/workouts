@@ -1,6 +1,8 @@
+@props(['name'])
+
 <flux:dropdown position="bottom" align="start">
     <flux:sidebar.profile
-        {{ $attributes->only('name') }}
+        :name="$name"
         :initials="auth()->user()->initials()"
         icon:trailing="chevrons-up-down"
         data-test="sidebar-menu-button"
@@ -20,7 +22,7 @@
         <flux:menu.separator />
         <flux:menu.radio.group>
             <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                {{ __('Settings') }}
+                Settings
             </flux:menu.item>
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
