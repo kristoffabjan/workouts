@@ -1,10 +1,33 @@
+@php
+    $appName = \App\Helpers\SettingsHelper::getApplicationName();
+    $pageTitle = $appName . ' - ' . __('pages.home.hero.title');
+    $pageDescription = __('pages.home.hero.subtitle');
+    $canonicalUrl = route('home');
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ \App\Helpers\SettingsHelper::getApplicationName() }}</title>
+
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:site_name" content="{{ $appName }}">
+    <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -21,7 +44,6 @@
 
 <body class="bg-[#0f1929] min-h-screen antialiased">
     @php
-        $appName = \App\Helpers\SettingsHelper::getApplicationName();
         $appLogo = \App\Helpers\SettingsHelper::getApplicationLogo();
     @endphp
     <div class="min-h-screen flex flex-col relative overflow-hidden">

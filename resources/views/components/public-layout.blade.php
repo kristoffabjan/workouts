@@ -1,11 +1,34 @@
-@props(['title' => null])
+@props(['title' => null, 'description' => null])
+
+@php
+    $appName = \App\Helpers\SettingsHelper::getApplicationName();
+    $pageTitle = $title ? $title . ' - ' . $appName : $appName . ' - ' . __('pages.home.hero.title');
+    $pageDescription = $description ?? __('pages.home.hero.subtitle');
+    $canonicalUrl = url()->current();
+@endphp
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ? $title . ' - ' : '' }}{{ config('app.name', 'Workouts') }}</title>
+
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:site_name" content="{{ $appName }}">
+    <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -27,7 +50,7 @@
                             <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <span class="text-lg font-semibold text-white">{{ config('app.name', 'Workouts') }}</span>
+                    <span class="text-lg font-semibold text-white">{{ $appName }}</span>
                 </a>
                 <nav class="flex items-center gap-6">
                     <a href="{{ route('features') }}" class="text-sm text-[#9fb3c8] hover:text-white transition-colors">{{ __('pages.common.features') }}</a>
@@ -43,7 +66,7 @@
         <footer class="relative z-10 py-6 px-4 sm:px-6 lg:px-8 border-t border-[#243b53]">
             <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="text-sm text-[#627d98]">
-                    &copy; {{ date('Y') }} {{ config('app.name', 'Workouts') }}. {{ __('pages.home.copyright') }}
+                    &copy; {{ date('Y') }} {{ $appName }}. {{ __('pages.home.copyright') }}
                 </div>
                 <nav class="flex items-center gap-6 text-sm text-[#627d98]">
                     <a href="{{ route('features') }}" class="hover:text-white transition-colors">{{ __('pages.common.features') }}</a>

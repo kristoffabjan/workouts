@@ -1,4 +1,4 @@
-<x-public-layout :title="__('pages.features.title')">
+<x-public-layout :title="__('pages.features.title')" :description="__('pages.features.subtitle')">
     <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">{{ __('pages.features.title') }}</h1>

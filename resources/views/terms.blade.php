@@ -1,4 +1,8 @@
-<x-public-layout :title="__('pages.terms.title')">
+@php
+    $appName = \App\Helpers\SettingsHelper::getApplicationName();
+@endphp
+
+<x-public-layout :title="__('pages.terms.title')" :description="__('pages.terms.acceptance.content', ['app_name' => $appName])">
     <div class="max-w-4xl mx-auto">
         <h1 class="text-3xl sm:text-4xl font-bold text-white mb-4 tracking-tight">{{ __('pages.terms.title') }}</h1>
         <p class="text-[#627d98] mb-10">
@@ -9,14 +13,14 @@
             <section class="p-6 rounded-2xl bg-[#1a2744]/80 border border-[#243b53]">
                 <h2 class="text-lg font-semibold text-white mb-3">{{ __('pages.terms.acceptance.title') }}</h2>
                 <p class="text-[#9fb3c8] leading-relaxed">
-                    {{ __('pages.terms.acceptance.content', ['app_name' => config('app.name', 'Workouts')]) }}
+                    {{ __('pages.terms.acceptance.content', ['app_name' => $appName]) }}
                 </p>
             </section>
 
             <section class="p-6 rounded-2xl bg-[#1a2744]/80 border border-[#243b53]">
                 <h2 class="text-lg font-semibold text-white mb-3">{{ __('pages.terms.description.title') }}</h2>
                 <p class="text-[#9fb3c8] leading-relaxed">
-                    {{ __('pages.terms.description.content', ['app_name' => config('app.name', 'Workouts')]) }}
+                    {{ __('pages.terms.description.content', ['app_name' => $appName]) }}
                 </p>
             </section>
 
