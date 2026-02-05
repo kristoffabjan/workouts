@@ -1123,6 +1123,7 @@ When teams "attach" global exercises, **create a copy** with `team_id` set to th
 - [ ] Add idempotent production seeders for essential data
   - Global exercises library seeding
   - Exercise tags seeding
+- [ ] Allow users to add only one team in addition to personal team
 
 ---
 
@@ -1341,111 +1342,50 @@ jobs:
 
 #### Phase 6: Domain & SSL Setup (partial)
 - [x] Purchase domain name (ipok.si)
-- [ ] Configure DNS records pointing to DigitalOcean droplet
+- [x] Configure DNS records pointing to DigitalOcean droplet
+- [x] Configure Mailgun domain for sending emails
 - [x] Plan subdomain structure - using main domain ipok.si
+
+##### Phase 6.1: Locally test mailgun setup with production env
+- [x] Update local .env and add mailgun credentials
+- [x] Test sending emails from local docker setup
+- [ ] Test receiving emails to info@ipok.si to private email
+- [ ] Test sending emails as info@ipok.si from gmail via mailgun SMTP
 
 #### Phase 7: Server Infrastructure
 - [x] Provision DigitalOcean droplet (Ubuntu 24.04 LTS, Basic $12/mo)
   - 1 vCPU, 2GB RAM, 50GB SSD, Frankfurt region
-- [ ] Initial server security hardening
-  - Create non-root user with sudo access
-  - Disable root SSH login
-  - Configure SSH key authentication only
-  - Set up fail2ban
-- [ ] Install Docker and Docker Compose on server
-- [ ] Configure UFW firewall
+- [x] Initial server security hardening
+  - [x] Create non-root user with sudo access
+  - [x] Disable root SSH login
+  - [x] Configure SSH key authentication only
+  - [x] Set up fail2ban
+- [x] Install Docker and Docker Compose on server
+- [x] Configure UFW firewall
   - Allow SSH (22)
   - Allow HTTP (80)
   - Allow HTTPS (443)
   - Deny all other incoming by default
-- [ ] Set up Nginx reverse proxy on host
-  - Install Nginx on host (not in Docker)
-  - Create server blocks for each subdomain
-  - Configure proxy_pass to Docker containers
-  - Set up upstream definitions
-- [ ] Set up SSL with Let's Encrypt/Certbot
-  - Install certbot
-  - Generate certificates for all subdomains
-  - Configure auto-renewal cron job
-- [ ] Create deployment directory structure on server
-  - `/opt/apps/workouts/` for this app
-  - Shared volumes for persistent data
+- [x] Set up Nginx reverse proxy on host
+  - [x] Install Nginx on host (not in Docker)
+  - [x] Create server blocks for each subdomain
+  - [x] Configure proxy_pass to Docker containers
+  - [x] Set up upstream definitions
+- [x] Set up SSL with Let's Encrypt/Certbot
+  - [x] Install certbot
+  - [x] Generate certificates for all subdomains
+  - [x] Configure auto-renewal cron job (systemd timer)
+- [x] Create deployment directory structure on server
+  - [x] `/opt/apps/workouts/` for this app
+  - [x] Shared volumes for persistent data (storage/logs, storage/app/public, backups)
+- [x] Adapt deploy.yml, to read github secrets and insert them into .env.docker.prod and .env.production on server
+  - [x] .env.production for Laravel app
+  - [x] .env.docker.prod for Docker Compose
 
 #### Phase 8: Deployment Scripts
-
-##### First-Time Server Setup
-```bash
-# 1. Create external network (once per server, for multi-app reverse proxy)
-docker network create web
-
-# 2. Build all images (PHP must be built first - nginx depends on it)
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build php
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build nginx horizon scheduler
-
-# 3. Start containers
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
-
-# 4. Generate APP_KEY and add to .env.production
-php artisan key:generate --show
-# Copy output to .env.production, then restart: docker-compose restart php
-
-# 5. Run migrations
-docker exec workouts_php php artisan migrate --force
-
-# 6. Cache configuration
-docker exec workouts_php php artisan config:cache
-docker exec workouts_php php artisan route:cache
-docker exec workouts_php php artisan view:cache
-
-# 7. Create system admin user
-docker exec workouts_php php artisan user:create "Admin Name" "admin@example.com" "securepassword" --admin
-
-# 8. Seed global exercises library (idempotent)
-docker exec workouts_php php artisan db:seed --class=GlobalExerciseSeeder --force
-```
-
-##### Commands for Each Deploy (`scripts/deploy.sh`)
-```bash
-#!/bin/bash
-set -e
-
-# 1. Pull/build new images
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build php
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod build nginx horizon scheduler
-
-# 2. Restart containers with new images
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
-
-# 3. Run migrations
-docker exec workouts_php php artisan migrate --force
-
-# 4. Clear and rebuild caches
-docker exec workouts_php php artisan config:cache
-docker exec workouts_php php artisan route:cache
-docker exec workouts_php php artisan view:cache
-
-# 5. Restart queue workers (pick up new code)
-docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod restart horizon
-
-# 6. (Optional) Re-seed global exercises if new ones added
-docker exec workouts_php php artisan db:seed --class=GlobalExerciseSeeder --force
-
-# 7. Health check
-docker-compose -f docker-compose.prod.yml ps
-```
-
-##### Environment Files Required
-- `.env.docker.prod` - Docker Compose variables (DB credentials, project name)
-- `.env.production` - Laravel variables (APP_KEY, APP_URL, DB_*, REDIS_*, etc.)
-
 ##### Tasks
-- [ ] Create `scripts/deploy.sh` for server-side deployment
-- [ ] Create `scripts/rollback.sh` for emergency rollback
-  - Keep previous 3 image versions
-  - Quick rollback procedure
-- [ ] Create `scripts/backup.sh` for database backups
-  - Daily automated backups
-  - Upload to external storage (optional)
+- [x] Create `scripts/backup.sh` for database backups
+  - [x] Daily automated backups (7-day retention)
 
 #### Phase 9: Testing & Verification
 - [ ] Test full CI/CD pipeline with a test branch
