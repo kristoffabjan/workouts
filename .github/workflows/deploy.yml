@@ -53,18 +53,30 @@ jobs:
           docker push $REGISTRY/workouts-nginx:${{ github.sha }}
           docker push $REGISTRY/workouts-nginx:latest
 
-      # 8. Deploy to server via SSH
+      # 8. Copy docker-compose.prod.yml to server
+      - name: Copy docker-compose file to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PRODUCTION_SSH_HOST }}
+          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: ${{ secrets.PRODUCTION_APP_PATH }}
+
+      # 9. Deploy to server via SSH
       - name: Deploy to production
         uses: appleboy/ssh-action@v1.0.3
         env:
           REGISTRY: registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           APP_PATH: ${{ secrets.PRODUCTION_APP_PATH }}
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+          ENV_DOCKER_PROD: ${{ secrets.ENV_DOCKER_PROD }}
         with:
           host: ${{ secrets.PRODUCTION_SSH_HOST }}
           username: ${{ secrets.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          envs: REGISTRY,DO_TOKEN,APP_PATH
+          envs: REGISTRY,DO_TOKEN,APP_PATH,ENV_PRODUCTION,ENV_DOCKER_PROD
           script_stop: true
           script: |
             cd $APP_PATH
@@ -72,29 +84,33 @@ jobs:
             # Login to DO registry on server
             echo "$DO_TOKEN" | docker login registry.digitalocean.com -u "$DO_TOKEN" --password-stdin
 
+            # Write env files from GitHub secrets
+            echo "$ENV_DOCKER_PROD" > .env.docker.prod
+            echo "$ENV_PRODUCTION" > .env.production
+
             # Pull new images
             docker pull $REGISTRY/workouts-php:latest
             docker pull $REGISTRY/workouts-nginx:latest
 
             # Terminate Horizon before restarting (|| true for first deploy when container doesn't exist)
-            docker-compose -f docker-compose.prod.yml exec -T horizon php artisan horizon:terminate --wait || true
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T horizon php artisan horizon:terminate --wait || true
 
             # Pull and restart containers
-            docker-compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
 
             # Set up storage symlink (idempotent)
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan storage:link || true
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan storage:link || true
 
             # Run migrations
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan migrate --force
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan migrate --force
 
             # Clear and rebuild caches
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan config:cache
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan route:cache
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan view:cache
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan config:cache
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan route:cache
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan view:cache
 
             # Seed global exercises (idempotent - uses firstOrCreate)
-            docker-compose -f docker-compose.prod.yml exec -T php php artisan db:seed --class=GlobalExerciseSeeder --force
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan db:seed --class=GlobalExerciseSeeder --force
 
             # Health check
-            docker-compose -f docker-compose.prod.yml ps
+            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod ps
