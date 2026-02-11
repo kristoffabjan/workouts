@@ -40,18 +40,9 @@ jobs:
           cache-from: type=gha,scope=php
           cache-to: type=gha,mode=max,scope=php
 
-      # 5. Build Nginx image (reuses PHP image for static assets)
+      # 5. Build Nginx image (tiny - just copies static assets from PHP image)
       - name: Build Nginx image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: .docker/nginx/Dockerfile.prod
-          load: true
-          tags: workouts-nginx:latest
-          build-contexts: |
-            workouts-php:latest=docker-image://workouts-php:latest
-          cache-from: type=gha,scope=nginx
-          cache-to: type=gha,mode=max,scope=nginx
+        run: docker build -t workouts-nginx:latest -f .docker/nginx/Dockerfile.prod .
 
       # 6. Smoke test
       - name: Smoke test
