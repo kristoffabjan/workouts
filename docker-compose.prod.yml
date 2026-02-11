@@ -8,8 +8,7 @@
 # 3. Database/Redis not exposed to host (internal only)
 # 4. Uses production Dockerfiles (multi-stage, optimized)
 # 5. External network for reverse proxy integration
-# 6. Resource limits to prevent runaway containers
-# 7. Healthchecks for monitoring
+# 6. Healthchecks for monitoring
 #
 # Usage:
 #   # First time: create external network
@@ -59,15 +58,6 @@ services:
     depends_on:
       php:
         condition: service_healthy
-
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 32M
 
     networks:
       - internal
@@ -139,15 +129,6 @@ services:
       retries: 3
       start_period: 30s
 
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-
     depends_on:
       mysql:
         condition: service_healthy
@@ -195,15 +176,6 @@ services:
       retries: 3
       start_period: 30s
 
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-
     depends_on:
       php:
         condition: service_healthy
@@ -244,15 +216,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
 
     depends_on:
       php:
@@ -296,15 +259,6 @@ services:
       retries: 5
       start_period: 60s
 
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
     networks:
       - internal
 
@@ -330,15 +284,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
 
     networks:
       - internal
