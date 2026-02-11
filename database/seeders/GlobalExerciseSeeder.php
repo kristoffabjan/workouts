@@ -10,8 +10,16 @@ class GlobalExerciseSeeder extends Seeder
 {
     public function run(): void
     {
-        $systemAdmin = User::where('is_admin', true)->first();
-        $createdBy = $systemAdmin?->id;
+        $systemAdmin = User::where('is_admin', true)->first()
+            ?? User::first();
+
+        if (! $systemAdmin) {
+            $this->command?->warn('No users found. Skipping GlobalExerciseSeeder.');
+
+            return;
+        }
+
+        $createdBy = $systemAdmin->id;
 
         $exercises = $this->getExercises();
 
