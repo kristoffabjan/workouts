@@ -95,24 +95,24 @@ jobs:
             docker pull $REGISTRY/workouts-nginx:latest
 
             # Terminate Horizon before restarting (|| true for first deploy when container doesn't exist)
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T horizon php artisan horizon:terminate --wait || true
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T horizon php artisan horizon:terminate --wait || true
 
             # Pull and restart containers
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
 
             # Set up storage symlink (idempotent)
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan storage:link || true
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan storage:link || true
 
             # Run migrations
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan migrate --force
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan migrate --force
 
             # Clear and rebuild caches
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan config:cache
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan route:cache
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan view:cache
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan config:cache
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan route:cache
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan view:cache
 
             # Seed global exercises (idempotent - uses firstOrCreate)
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan db:seed --class=GlobalExerciseSeeder --force
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan db:seed --class=GlobalExerciseSeeder --force
 
             # Health check
-            docker-compose -f docker-compose.prod.yml --env-file .env.docker.prod ps
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod ps
