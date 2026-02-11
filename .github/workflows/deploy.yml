@@ -7,6 +7,7 @@ on:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    environment: Prod
     steps:
       # 1. Checkout code
       - uses: actions/checkout@v4
@@ -18,7 +19,7 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          token: ${{ vars.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Login to DigitalOcean Container Registry
         run: doctl registry login --expiry-seconds 1200
@@ -40,7 +41,7 @@ jobs:
       # 7. Tag and push images to DigitalOcean Container Registry
       - name: Push images to registry
         env:
-          REGISTRY: registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}
+          REGISTRY: registry.digitalocean.com/${{ vars.DIGITALOCEAN_REGISTRY_NAME }}
         run: |
           # Tag with SHA and latest
           docker tag workouts-php:latest $REGISTRY/workouts-php:${{ github.sha }}
@@ -58,24 +59,24 @@ jobs:
       - name: Copy docker-compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.PRODUCTION_SSH_HOST }}
-          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          host: ${{ vars.PRODUCTION_SSH_HOST }}
+          username: ${{ vars.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           source: "docker-compose.prod.yml"
-          target: ${{ secrets.PRODUCTION_APP_PATH }}
+          target: ${{ vars.PRODUCTION_APP_PATH }}
 
       # 9. Deploy to server via SSH
       - name: Deploy to production
         uses: appleboy/ssh-action@v1.0.3
         env:
-          REGISTRY: registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}
+          REGISTRY: registry.digitalocean.com/${{ vars.DIGITALOCEAN_REGISTRY_NAME }}
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          APP_PATH: ${{ secrets.PRODUCTION_APP_PATH }}
-          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
-          ENV_DOCKER_PROD: ${{ secrets.ENV_DOCKER_PROD }}
+          APP_PATH: ${{ vars.PRODUCTION_APP_PATH }}
+          ENV_PRODUCTION: ${{ vars.ENV_PRODUCTION }}
+          ENV_DOCKER_PROD: ${{ vars.ENV_DOCKER_PROD }}
         with:
-          host: ${{ secrets.PRODUCTION_SSH_HOST }}
-          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          host: ${{ vars.PRODUCTION_SSH_HOST }}
+          username: ${{ vars.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           envs: REGISTRY,DO_TOKEN,APP_PATH,ENV_PRODUCTION,ENV_DOCKER_PROD
           script_stop: true
