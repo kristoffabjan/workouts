@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - dev
-      - master
   pull_request:
     branches:
       - develop
       - main
       - master
       - components
+  workflow_call:
 
 jobs:
   ci:
