@@ -19,7 +19,7 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ vars.DIGITALOCEAN_ACCESS_TOKEN }}
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Login to DigitalOcean Container Registry
         run: doctl registry login --expiry-seconds 1200
@@ -72,8 +72,8 @@ jobs:
           REGISTRY: registry.digitalocean.com/${{ vars.DIGITALOCEAN_REGISTRY_NAME }}
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           APP_PATH: ${{ vars.PRODUCTION_APP_PATH }}
-          ENV_PRODUCTION: ${{ vars.ENV_PRODUCTION }}
-          ENV_DOCKER_PROD: ${{ vars.ENV_DOCKER_PROD }}
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+          ENV_DOCKER_PROD: ${{ secrets.ENV_DOCKER_PROD }}
         with:
           host: ${{ vars.PRODUCTION_SSH_HOST }}
           username: ${{ vars.PRODUCTION_SSH_USER }}
