@@ -57,7 +57,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasTenant
     {
         return match ($panel->getId()) {
             'admin' => $this->is_admin,
-            'app' => ! $this->is_admin,
+            'app' => true,
             default => false,
         };
     }
