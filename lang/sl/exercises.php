@@ -45,7 +45,7 @@ return [
         'added_title' => 'Vaje dodane',
         'added_body' => ':count vaj dodanih v vašo ekipo.',
         'none_added_title' => 'Nobena vaja ni bila dodana',
-        'none_added_body' => 'Izbrane vaje že obstajajo v vaši ekipi.',
+        'none_added_body' => 'Izbrane vaje že obstajajo v vaši ekipi. Poskusite izbrati druge vaje ali ustvarite novo vajo po meri.',
     ],
 
     'tags' => [

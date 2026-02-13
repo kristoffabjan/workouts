@@ -9,6 +9,7 @@ use Filament\Actions\DetachAction;
 use Filament\Actions\DetachBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -106,15 +107,40 @@ class AssignedUsersRelationManager extends RelationManager
                             ->label('User')
                             ->searchable()
                             ->preload(),
-                    ]),
+                    ])
+                    ->after(function ($records) {
+                        $count = is_array($records) ? count($records) : 1;
+
+                        Notification::make()
+                            ->success()
+                            ->title(__('trainings.notifications.users_assigned'))
+                            ->body(__('trainings.notifications.users_assigned_count', ['count' => $count]))
+                            ->send();
+                    }),
             ])
             ->recordActions([
                 ViewAction::make(),
-                DetachAction::make(),
+                DetachAction::make()
+                    ->after(function ($record) {
+                        Notification::make()
+                            ->success()
+                            ->title(__('trainings.notifications.user_removed'))
+                            ->body(__('trainings.notifications.user_removed_body', ['name' => $record->name]))
+                            ->send();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DetachBulkAction::make(),
+                    DetachBulkAction::make()
+                        ->after(function ($records) {
+                            $count = count($records);
+
+                            Notification::make()
+                                ->success()
+                                ->title(__('trainings.notifications.users_removed'))
+                                ->body(__('trainings.notifications.users_removed_count', ['count' => $count]))
+                                ->send();
+                        }),
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->orderBy('training_user.created_at', 'desc'));

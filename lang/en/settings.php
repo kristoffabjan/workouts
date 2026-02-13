@@ -24,6 +24,8 @@ return [
         ],
         'messages' => [
             'saved' => 'Team settings saved successfully.',
+            'save_failed' => 'Failed to save team settings',
+            'save_failed_body' => 'An error occurred while saving team settings. Please try again or contact support if the problem persists.',
         ],
         'personal' => [
             'heading' => 'Personal Workspace',
@@ -92,6 +94,8 @@ return [
         'messages' => [
             'saved' => 'Your settings have been saved successfully.',
             'password_changed' => 'Your password has been changed successfully.',
+            'save_failed' => 'Failed to save settings',
+            'save_failed_body' => 'An error occurred while saving your settings. Please try again or contact support if the problem persists.',
         ],
         'language_options' => [
             'system' => 'System Default',

@@ -118,29 +118,39 @@ class TeamSettings extends Page
             return;
         }
 
-        $data = $this->getSchema('form')->getState();
-        $team = $this->getTeam();
-        $oldSlug = $team->slug;
-        $newSlug = Str::slug($data['name']);
+        try {
+            $data = $this->getSchema('form')->getState();
+            $team = $this->getTeam();
+            $oldSlug = $team->slug;
+            $newSlug = Str::slug($data['name']);
 
-        $logoValue = is_array($data['logo']) ? ($data['logo'][0] ?? null) : $data['logo'];
+            $logoValue = is_array($data['logo']) ? ($data['logo'][0] ?? null) : $data['logo'];
 
-        $team->update([
-            'name' => $data['name'],
-            'slug' => $newSlug,
-            'settings' => array_merge($team->settings ?? [], [
-                'logo' => $logoValue,
-                'default_reminder_time' => $data['default_reminder_time'],
-            ]),
-        ]);
+            $team->update([
+                'name' => $data['name'],
+                'slug' => $newSlug,
+                'settings' => array_merge($team->settings ?? [], [
+                    'logo' => $logoValue,
+                    'default_reminder_time' => $data['default_reminder_time'],
+                ]),
+            ]);
 
-        Notification::make()
-            ->success()
-            ->title(__('settings.team.messages.saved'))
-            ->send();
+            Notification::make()
+                ->success()
+                ->title(__('settings.team.messages.saved'))
+                ->send();
 
-        if ($oldSlug !== $newSlug) {
-            $this->redirect(Filament::getUrl($team));
+            if ($oldSlug !== $newSlug) {
+                $this->redirect(Filament::getUrl($team));
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->danger()
+                ->title(__('settings.team.messages.save_failed'))
+                ->body(__('settings.team.messages.save_failed_body'))
+                ->send();
+
+            throw $e;
         }
     }
 

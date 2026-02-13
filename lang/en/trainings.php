@@ -68,6 +68,12 @@ return [
         'created_count' => 'Created :count training(s)',
         'marked_complete' => 'Training marked as complete',
         'feedback_updated' => 'Feedback updated',
+        'users_assigned' => 'Users assigned successfully',
+        'users_assigned_count' => 'Successfully assigned :count user(s) to this training',
+        'user_removed' => 'User removed successfully',
+        'user_removed_body' => ':name has been removed from this training',
+        'users_removed' => 'Users removed successfully',
+        'users_removed_count' => 'Successfully removed :count user(s) from this training',
     ],
 
     'completion' => [
@@ -83,11 +89,18 @@ return [
     'validation' => [
         'scheduled_date_required' => 'A scheduled date is required when status is Scheduled.',
         'scheduled_date_in_past' => 'The scheduled date cannot be in the past.',
+        'scheduled_date_in_past_body' => 'Please select a future date and try again. All selected dates must be in the future.',
         'no_date_selected' => 'Please select at least one date for scheduling.',
+        'no_date_selected_body' => 'Choose a single date, multiple specific dates, or set up a weekly pattern to schedule this training.',
         'feedback_deadline_passed' => 'The feedback deadline has passed. You can no longer submit feedback for this training.',
         'user_not_in_team' => 'One or more selected users are not members of this team.',
         'cannot_edit_past_training' => 'You cannot edit a training that has already been scheduled in the past.',
         'cannot_assign_past_training' => 'You cannot assign users to a training that has already been scheduled in the past.',
+    ],
+
+    'info' => [
+        'feedback_editable' => 'You can edit your feedback',
+        'feedback_editable_body' => 'You have :days days to edit your feedback if needed. After that, your feedback will be locked.',
     ],
 
     'calendar' => [

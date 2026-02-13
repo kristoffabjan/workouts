@@ -115,6 +115,7 @@ class ScheduleTrainingAction
                 if (empty($dates)) {
                     Notification::make()
                         ->title(__('trainings.validation.no_date_selected'))
+                        ->body(__('trainings.validation.no_date_selected_body'))
                         ->warning()
                         ->send();
 
@@ -125,6 +126,7 @@ class ScheduleTrainingAction
                 if ($pastDates->isNotEmpty()) {
                     Notification::make()
                         ->title(__('trainings.validation.scheduled_date_in_past'))
+                        ->body(__('trainings.validation.scheduled_date_in_past_body'))
                         ->warning()
                         ->send();
 

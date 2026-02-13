@@ -68,6 +68,12 @@ return [
         'created_count' => 'Ustvarjenih :count treningov',
         'marked_complete' => 'Trening označen kot zaključen',
         'feedback_updated' => 'Povratna informacija posodobljena',
+        'users_assigned' => 'Uporabniki uspešno dodeljeni',
+        'users_assigned_count' => 'Uspešno dodeljenih :count uporabnikov temu treningu',
+        'user_removed' => 'Uporabnik uspešno odstranjen',
+        'user_removed_body' => ':name je bil odstranjen iz tega treninga',
+        'users_removed' => 'Uporabniki uspešno odstranjeni',
+        'users_removed_count' => 'Uspešno odstranjenih :count uporabnikov iz tega treninga',
     ],
 
     'completion' => [
@@ -83,11 +89,18 @@ return [
     'validation' => [
         'scheduled_date_required' => 'Datum je obvezen, ko je status nastavljen na Načrtovano.',
         'scheduled_date_in_past' => 'Datum ne more biti v preteklosti.',
+        'scheduled_date_in_past_body' => 'Prosimo, izberite prihodnji datum in poskusite znova. Vsi izbrani datumi morajo biti v prihodnosti.',
         'no_date_selected' => 'Prosimo, izberite vsaj en datum za načrtovanje.',
+        'no_date_selected_body' => 'Izberite en datum, več specifičnih datumov ali nastavite tedenski vzorec za načrtovanje tega treninga.',
         'feedback_deadline_passed' => 'Rok za oddajo povratne informacije je potekel. Ne morete več oddati povratne informacije za ta trening.',
         'user_not_in_team' => 'Eden ali več izbranih uporabnikov ni član te ekipe.',
         'cannot_edit_past_training' => 'Ne morete urejati treninga, ki je bil že načrtovan v preteklosti.',
         'cannot_assign_past_training' => 'Ne morete dodeljevati uporabnikov treningu, ki je bil že načrtovan v preteklosti.',
+    ],
+
+    'info' => [
+        'feedback_editable' => 'Povratno informacijo lahko uredite',
+        'feedback_editable_body' => 'Imate :days dni za urejanje povratne informacije, če je potrebno. Po tem bo vaša povratna informacija zaklenjena.',
     ],
 
     'calendar' => [

@@ -45,7 +45,7 @@ return [
         'added_title' => 'Exercises added',
         'added_body' => ':count exercise(s) added to your team.',
         'none_added_title' => 'No exercises added',
-        'none_added_body' => 'Selected exercises already exist in your team.',
+        'none_added_body' => 'Selected exercises already exist in your team. Try selecting different exercises or create a new custom exercise.',
     ],
 
     'tags' => [

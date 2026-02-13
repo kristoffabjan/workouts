@@ -38,7 +38,7 @@ class UserSettings extends Page
 
     public function mount(): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $settings = $user->settings ?? [];
         $avatar = $settings['avatar'] ?? null;
 
@@ -117,37 +117,48 @@ class UserSettings extends Page
 
     public function save(): void
     {
-        $data = $this->getSchema('form')->getState();
-        $user = Auth::user();
+        try {
+            $data = $this->getSchema('form')->getState();
+            /* @var \App\Models\User $user */
+            $user = Auth::user();
 
-        $avatarValue = is_array($data['avatar']) ? ($data['avatar'][0] ?? null) : $data['avatar'];
+            $avatarValue = is_array($data['avatar']) ? ($data['avatar'][0] ?? null) : $data['avatar'];
 
-        $user->updateSettings([
-            'avatar' => $avatarValue,
-            'preferred_language' => $data['preferred_language'] ?: null,
-            'weight_unit' => $data['weight_unit'],
-        ]);
-
-        $passwordChanged = false;
-        if (! empty($data['password'])) {
-            $user->update([
-                'password' => Hash::make($data['password']),
-            ]);
-            $passwordChanged = true;
-
-            $this->form->fill([
-                'avatar' => $avatarValue ? [$avatarValue] : [],
+            $user->updateSettings([
+                'avatar' => $avatarValue,
                 'preferred_language' => $data['preferred_language'] ?: null,
                 'weight_unit' => $data['weight_unit'],
-                'current_password' => null,
-                'password' => null,
-                'password_confirmation' => null,
             ]);
-        }
 
-        Notification::make()
-            ->success()
-            ->title($passwordChanged ? __('settings.user.messages.password_changed') : __('settings.user.messages.saved'))
-            ->send();
+            $passwordChanged = false;
+            if (! empty($data['password'])) {
+                $user->update([
+                    'password' => Hash::make($data['password']),
+                ]);
+                $passwordChanged = true;
+
+                $this->form->fill([
+                    'avatar' => $avatarValue ? [$avatarValue] : [],
+                    'preferred_language' => $data['preferred_language'] ?: null,
+                    'weight_unit' => $data['weight_unit'],
+                    'current_password' => null,
+                    'password' => null,
+                    'password_confirmation' => null,
+                ]);
+            }
+
+            Notification::make()
+                ->success()
+                ->title($passwordChanged ? __('settings.user.messages.password_changed') : __('settings.user.messages.saved'))
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->danger()
+                ->title(__('settings.user.messages.save_failed'))
+                ->body(__('settings.user.messages.save_failed_body'))
+                ->send();
+
+            throw $e;
+        }
     }
 }

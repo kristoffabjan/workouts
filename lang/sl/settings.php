@@ -24,6 +24,8 @@ return [
         ],
         'messages' => [
             'saved' => 'Nastavitve ekipe so bile uspešno shranjene.',
+            'save_failed' => 'Shranjevanje nastavitev ekipe ni uspelo',
+            'save_failed_body' => 'Pri shranjevanju nastavitev ekipe je prišlo do napake. Prosimo, poskusite znova ali se obrnite na podporo, če težava ne izgine.',
         ],
         'personal' => [
             'heading' => 'Osebni prostor',
@@ -92,6 +94,8 @@ return [
         'messages' => [
             'saved' => 'Vaše nastavitve so bile uspešno shranjene.',
             'password_changed' => 'Vaše geslo je bilo uspešno spremenjeno.',
+            'save_failed' => 'Shranjevanje ni uspelo',
+            'save_failed_body' => 'Pri shranjevanju nastavitev je prišlo do napake. Prosimo, poskusite znova ali se obrnite na podporo, če težava ne izgine.',
         ],
         'language_options' => [
             'system' => 'Sistemske privzete',

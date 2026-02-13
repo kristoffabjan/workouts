@@ -213,6 +213,14 @@ class ViewTraining extends ViewRecord
             ->success()
             ->send();
 
+        $deadlineDays = config('workouts.feedback_deadline_days', 3);
+
+        Notification::make()
+            ->info()
+            ->title(__('trainings.info.feedback_editable'))
+            ->body(__('trainings.info.feedback_editable_body', ['days' => $deadlineDays]))
+            ->send();
+
         $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
     }
 
