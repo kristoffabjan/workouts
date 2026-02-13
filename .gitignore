@@ -31,3 +31,5 @@ boost.json
 /.ai
 .secrets
 .actrc
+plan.md
+specification.md
