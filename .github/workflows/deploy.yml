@@ -40,42 +40,34 @@ jobs:
           cache-from: type=gha,scope=php
           cache-to: type=gha,mode=max,scope=php
 
-      # 5. Build Nginx image (tiny - just copies static assets from PHP image)
-      - name: Build Nginx image
-        run: docker build -t workouts-nginx:latest -f .docker/nginx/Dockerfile.prod .
-
-      # 6. Smoke test
+      # 5. Smoke test
       - name: Smoke test
         run: |
           docker run --rm workouts-php:latest php artisan --version
           docker run --rm workouts-php:latest php artisan about
 
-      # 7. Tag and push images to DigitalOcean Container Registry
-      - name: Push images to registry
+      # 6. Tag and push PHP image to DigitalOcean Container Registry
+      - name: Push PHP image to registry
         env:
           REGISTRY: registry.digitalocean.com/${{ vars.DIGITALOCEAN_REGISTRY_NAME }}
         run: |
           docker tag workouts-php:latest $REGISTRY/workouts-php:${{ github.sha }}
           docker tag workouts-php:latest $REGISTRY/workouts-php:latest
-          docker tag workouts-nginx:latest $REGISTRY/workouts-nginx:${{ github.sha }}
-          docker tag workouts-nginx:latest $REGISTRY/workouts-nginx:latest
 
           docker push $REGISTRY/workouts-php:${{ github.sha }}
           docker push $REGISTRY/workouts-php:latest
-          docker push $REGISTRY/workouts-nginx:${{ github.sha }}
-          docker push $REGISTRY/workouts-nginx:latest
 
-      # 8. Copy docker-compose.prod.yml to server
-      - name: Copy docker-compose file to server
+      # 7. Copy deployment files to server
+      - name: Copy deployment files to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.PRODUCTION_SSH_HOST }}
           username: ${{ vars.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          source: "docker-compose.prod.yml"
+          source: "docker-compose.prod.yml,.docker/nginx"
           target: ${{ vars.PRODUCTION_APP_PATH }}
 
-      # 9. Deploy to server via SSH
+      # 8. Deploy to server via SSH
       - name: Deploy to production
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -100,15 +92,18 @@ jobs:
             echo "$ENV_DOCKER_PROD" > .env.docker.prod
             echo "$ENV_PRODUCTION" > .env.production
 
-            # Pull new images
+            # Pull new PHP image
             docker pull $REGISTRY/workouts-php:latest
-            docker pull $REGISTRY/workouts-nginx:latest
 
             # Terminate Horizon before restarting (|| true for first deploy when container doesn't exist)
             docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T horizon php artisan horizon:terminate --wait || true
 
-            # Pull and restart containers
+            # Restart containers
             docker compose -f docker-compose.prod.yml --env-file .env.docker.prod up -d
+
+            # Publish Laravel package assets (Filament, Livewire) to public/ volume
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan filament:upgrade --ansi
+            docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan livewire:publish --assets --ansi
 
             # Set up storage symlink (idempotent)
             docker compose -f docker-compose.prod.yml --env-file .env.docker.prod exec -T php php artisan storage:link || true

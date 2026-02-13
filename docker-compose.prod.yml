@@ -30,21 +30,18 @@
 
 services:
   # ============================================
-  # NGINX - Reverse Proxy
+  # NGINX - Reverse Proxy & Static File Server
   # ============================================
-  # Pure reverse proxy - forwards ALL requests to PHP-FPM
-  # PHP serves everything including static files via Laravel
+  # Serves static files directly from shared public/ volume
+  # Forwards PHP requests to PHP-FPM
   #
   # Request flow:
   # Internet → Host Nginx (SSL, :443) → This Nginx (:8080) → PHP-FPM (:9000)
-  #
-  # Why this approach?
-  # - No duplicate npm builds (PHP image builds everything)
-  # - Simpler setup with no shared volumes needed
-  # - Tiny nginx image (just base + config)
+  #                                                         ↓
+  #                                              Static files served directly
 
   nginx:
-    image: registry.digitalocean.com/workouts/workouts-nginx:latest
+    image: nginx:1.27.3-alpine
     container_name: ${COMPOSE_PROJECT_NAME}_nginx
     restart: always
 
@@ -53,7 +50,11 @@ services:
     ports:
       - "127.0.0.1:8080:80"
 
-    # No volumes needed - nginx is a pure proxy
+    volumes:
+      # Nginx config
+      - ./.docker/nginx/default.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      # Shared public directory (Laravel assets published at runtime)
+      - app_public:/var/www/html/public:ro
 
     depends_on:
       php:
@@ -90,6 +91,7 @@ services:
     # ----------------------------------------
     # Only mount what MUST persist across deploys:
     # - storage/ for uploads, logs, cache
+    # - public/ for Laravel package assets (Filament, Livewire)
     # - .env file for configuration
     volumes:
       # ----------------------------------------
@@ -98,6 +100,14 @@ services:
       # Persists: user uploads, logs, framework cache
       # Without this, you'd lose uploads on every deploy!
       - app_storage:/var/www/html/storage
+
+      # ----------------------------------------
+      # PUBLIC VOLUME
+      # ----------------------------------------
+      # Shared with Nginx for static file serving
+      # PHP publishes assets here (filament:upgrade, livewire:publish)
+      # Populated from image on first start (includes public/build from Vite)
+      - app_public:/var/www/html/public
 
       # ----------------------------------------
       # ENVIRONMENT FILE
@@ -329,4 +339,10 @@ volumes:
 
   # Laravel storage (uploads, logs, cache)
   app_storage:
+    driver: local
+
+  # Public directory (Laravel assets, static files, Vite build output)
+  # Shared between PHP and Nginx
+  # Populated from PHP image on first container start
+  app_public:
     driver: local
