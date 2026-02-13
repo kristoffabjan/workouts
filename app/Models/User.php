@@ -56,7 +56,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasTenant
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'admin' => $this->is_admin,
+            'admin' => (bool) $this->is_admin,
             'app' => true,
             default => false,
         };
