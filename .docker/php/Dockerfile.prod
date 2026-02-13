@@ -33,12 +33,18 @@ WORKDIR /var/www/html
 # ----------------------------------------
 # Step 1: Composer install
 # ----------------------------------------
+# Copy Laravel app files first (required for post-autoload-dump hooks)
+COPY artisan ./
+COPY bootstrap ./bootstrap
+COPY config ./config
+COPY app ./app
+COPY public ./public
+
 # Copy composer files and install dependencies
 COPY composer.json composer.lock ./
 
 RUN composer install \
     --no-dev \
-    --no-scripts \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader
@@ -57,7 +63,6 @@ RUN npm ci
 # Copy source files needed for build
 COPY vite.config.js ./
 COPY resources ./resources
-COPY public ./public
 
 # Build production assets (now has access to vendor/livewire/flux/dist/flux.css)
 RUN npm run build
