@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use BezhanSalleh\LanguageSwitch\Enums\Placement;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Carbon\CarbonImmutable;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureFilament();
         $this->configureLanguageSwitch();
+        $this->configurePanelSwitch();
     }
 
     protected function configureLanguageSwitch(): void
@@ -57,11 +59,25 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
+    protected function configurePanelSwitch(): void
+    {
+        PanelSwitch::configureUsing(function (PanelSwitch $panelSwitch) {
+            $panelSwitch
+                ->labels([
+                    'app' => 'App',
+                    'admin' => 'Admin',
+                ])
+                ->modalHeading('Panels')
+                ->renderHook('panels::global-search.after')
+                ->simple();
+        });
+    }
+
     protected function configureFilament(): void
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-            fn (): View => view('filament.auth.login-footer'),
+            fn(): View => view('filament.auth.login-footer'),
         );
     }
 
@@ -73,14 +89,15 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
+        Password::defaults(
+            fn(): ?Password => app()->isProduction()
+                ? Password::min(12)
                 ->mixedCase()
                 ->letters()
                 ->numbers()
                 ->symbols()
                 ->uncompromised()
-            : null
+                : null
         );
     }
 }

@@ -2,6 +2,7 @@
 @import "../../../../vendor/filament/filament/resources/css/theme.css";
 
 @source "../../../../vendor/bezhansalleh/filament-language-switch/resources/views/**/*.blade.php";
+@source "../../../../vendor/bezhansalleh/filament-panel-switch/resources/views/**/*.blade.php";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

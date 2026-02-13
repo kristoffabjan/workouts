@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "bezhansalleh/filament-language-switch": "^4.0",
+        "bezhansalleh/filament-panel-switch": "^3.0",
         "filament/filament": "^4.0",
         "filament/spatie-laravel-settings-plugin": "^4.0",
         "laravel/fortify": "^1.30",
