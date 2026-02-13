@@ -52,10 +52,10 @@ describe('App Panel Access', function () {
         expect($user->canAccessPanel($this->appPanel))->toBeTrue();
     });
 
-    it('denies system admins access to app panel', function () {
+    it('allows system admins to access app panel', function () {
         $admin = User::factory()->create(['is_admin' => true]);
 
-        expect($admin->canAccessPanel($this->appPanel))->toBeFalse();
+        expect($admin->canAccessPanel($this->appPanel))->toBeTrue();
     });
 
     it('redirects unauthenticated users to app login', function () {
@@ -73,14 +73,14 @@ describe('App Panel Access', function () {
             ->assertOk();
     });
 
-    it('denies system admin access to app panel', function () {
+    it('allows system admin to access app panel with team', function () {
         $admin = User::factory()->create(['is_admin' => true]);
         $team = Team::factory()->create();
         $admin->teams()->attach($team, ['role' => TeamRole::Coach->value]);
 
         $this->actingAs($admin)
             ->get("/app/{$team->slug}")
-            ->assertForbidden();
+            ->assertOk();
     });
 });
 
