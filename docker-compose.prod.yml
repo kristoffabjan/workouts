@@ -147,6 +147,11 @@ services:
 
     networks:
       - internal
+      - web
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   # ============================================
   # HORIZON - Queue Worker
@@ -196,6 +201,11 @@ services:
 
     networks:
       - internal
+      - web
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   # ============================================
   # SCHEDULER - Cron Jobs
@@ -233,6 +243,11 @@ services:
 
     networks:
       - internal
+      - web
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   # ============================================
   # MYSQL - Database
