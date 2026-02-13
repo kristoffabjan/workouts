@@ -8,6 +8,7 @@ use App\Helpers\SettingsHelper;
 use App\Models\Team;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -73,19 +74,14 @@ class AppPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            // ->tenantRegistration(RegisterTeam::class)
+            ->tenantRegistration(RegisterTeam::class)
             ->searchableTenantMenu()
-            ->tenantMenuItems([
-                /* 'register' => Action::make('register_team')
-                    ->label('Register new team')
-                    ->icon('heroicon-o-plus-circle')
-                    ->url(fn (): string => route('filament.app.tenant.registration')), */
-            ])
             ->userMenuItems([
                 Action::make('user_settings')
                     ->label(__('settings.user.navigation_label'))
                     ->icon('heroicon-o-cog-6-tooth')
-                    ->url(fn (): string => UserSettings::getUrl()),
+                    ->hidden(fn (): bool => Filament::getTenant() === null) // hide if no tenant is active
+                    ->url(fn (): string => Filament::getTenant() ? UserSettings::getUrl(): '#'),
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->plugin(
